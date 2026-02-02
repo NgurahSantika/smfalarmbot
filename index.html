@@ -1,0 +1,995 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WITA Clock & Daily Alarm (Cloud Sync)</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Digital -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Inter:wght@300;400;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+        font-family: "Inter", sans-serif;
+        min-height: 100vh;
+      }
+      .clock-font {
+        font-family: "Orbitron", sans-serif;
+        text-shadow: 0 0 20px rgba(56, 189, 248, 0.5);
+      }
+      .glass-panel {
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
+      /* Custom Scrollbar */
+      ::-webkit-scrollbar {
+        width: 8px;
+      }
+      ::-webkit-scrollbar-track {
+        background: rgba(0, 0, 0, 0.1);
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #4f46e5;
+        border-radius: 4px;
+      }
+
+      .alarm-ring {
+        animation: ring 0.5s ease-in-out infinite;
+        color: #ef4444 !important;
+      }
+      @keyframes ring {
+        0% {
+          transform: rotate(0deg);
+        }
+        25% {
+          transform: rotate(10deg);
+        }
+        75% {
+          transform: rotate(-10deg);
+        }
+        100% {
+          transform: rotate(0deg);
+        }
+      }
+
+      /* Toast Animation */
+      .toast-enter {
+        transform: translateY(100%);
+        opacity: 0;
+      }
+      .toast-enter-active {
+        transform: translateY(0);
+        opacity: 1;
+        transition: all 0.3s ease-out;
+      }
+      .toast-exit {
+        transform: translateY(0);
+        opacity: 1;
+      }
+      .toast-exit-active {
+        transform: translateY(100%);
+        opacity: 0;
+        transition: all 0.3s ease-in;
+      }
+
+      /* Loader */
+      .loader {
+        border: 3px solid rgba(255, 255, 255, 0.1);
+        border-left-color: #3b82f6;
+        border-radius: 50%;
+        width: 20px;
+        height: 20px;
+        animation: spin 1s linear infinite;
+      }
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+    </style>
+  </head>
+  <body
+    class="text-white flex flex-col items-center p-4 relative overflow-x-hidden"
+  >
+    <!-- Cloud Status Indicator -->
+    <div
+      class="absolute top-4 left-4 z-40 flex items-center gap-2 px-3 py-1 bg-black/40 rounded-full text-xs border border-white/10"
+      id="cloud-status"
+    >
+      <div class="w-2 h-2 rounded-full bg-gray-500" id="cloud-dot"></div>
+      <span id="cloud-text" class="text-gray-400">Connecting...</span>
+    </div>
+
+    <!-- Tombol Telegram Floating -->
+    <button
+      onclick="openTelegramModal()"
+      class="absolute top-4 right-4 bg-blue-500 hover:bg-blue-400 text-white p-3 rounded-full shadow-lg transition transform hover:scale-110 z-40"
+      title="Setup Telegram Bot"
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <line x1="22" y1="2" x2="11" y2="13"></line>
+        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+      </svg>
+    </button>
+
+    <!-- Container Utama -->
+    <div class="w-full max-w-3xl flex flex-col items-center gap-6 mt-4 pb-24">
+      <!-- JAM DIGITAL (WITA) -->
+      <div
+        class="glass-panel w-full rounded-2xl p-8 text-center shadow-2xl relative overflow-hidden group"
+      >
+        <div
+          class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-cyan-500 to-blue-500"
+        ></div>
+
+        <h2
+          class="text-cyan-400 tracking-[0.2em] text-sm md:text-base font-bold mb-2 opacity-80"
+        >
+          WAKTU INDONESIA TENGAH (WITA)
+        </h2>
+
+        <div
+          id="clock-display"
+          class="clock-font text-6xl md:text-8xl font-bold text-white mb-2"
+        >
+          00:00:00
+        </div>
+
+        <div
+          id="date-display"
+          class="text-gray-300 text-lg md:text-xl font-light"
+        >
+          Memuat Tanggal...
+        </div>
+
+        <!-- Indikator Audio -->
+        <button
+          id="audio-btn"
+          onclick="toggleAudio()"
+          class="mt-4 px-4 py-1 rounded-full text-xs bg-white/10 hover:bg-white/20 transition flex items-center gap-2 mx-auto border border-white/10 cursor-pointer z-10 relative"
+        >
+          <span id="audio-icon">🔇</span>
+          <span id="audio-text">Klik untuk aktifkan suara alarm</span>
+        </button>
+      </div>
+
+      <!-- INPUT FORM -->
+      <div class="glass-panel w-full rounded-xl p-6 shadow-lg">
+        <h3 class="text-xl font-semibold mb-4 flex items-center gap-2">
+          📝 Tambah Jadwal & Alarm
+        </h3>
+
+        <div class="flex flex-col gap-3">
+          <!-- Baris 1: Judul -->
+          <input
+            type="text"
+            id="note-input"
+            placeholder="Judul Kegiatan (Akan jadi judul pesan)"
+            class="w-full bg-black/30 border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:border-cyan-500 transition text-white placeholder-gray-500 font-bold"
+          />
+
+          <!-- Baris 2: Pesan Tambahan (Isi) -->
+          <textarea
+            id="msg-input"
+            rows="2"
+            placeholder="Isi Pesan Telegram (Opsional)"
+            class="w-full bg-black/30 border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:border-cyan-500 transition text-white placeholder-gray-500 text-sm resize-none"
+          ></textarea>
+
+          <!-- Baris 3: Waktu & Pengaturan Frekuensi -->
+          <div class="flex flex-col md:flex-row gap-3">
+            <div class="flex-1 flex gap-3">
+              <input
+                type="time"
+                id="time-input"
+                class="bg-black/30 border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:border-cyan-500 transition text-white scheme-dark"
+              />
+
+              <select
+                id="repeat-type"
+                onchange="toggleIntervalInput()"
+                class="flex-1 bg-black/30 border border-gray-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-cyan-500 cursor-pointer"
+              >
+                <option value="daily">Setiap Hari</option>
+                <option value="hourly">Setiap Jam</option>
+                <option value="custom">Setiap ... Menit</option>
+              </select>
+
+              <input
+                type="number"
+                id="interval-input"
+                min="1"
+                max="1440"
+                placeholder="Menit"
+                class="hidden w-20 bg-black/30 border border-gray-600 rounded-lg px-3 py-3 text-white focus:outline-none focus:border-cyan-500 text-center"
+              />
+            </div>
+
+            <div class="flex gap-2">
+              <button
+                id="add-btn"
+                onclick="addOrUpdateNote()"
+                class="flex-1 md:flex-none bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition transform hover:scale-105 active:scale-95 whitespace-nowrap flex items-center justify-center gap-2"
+              >
+                <span>TAMBAH</span>
+              </button>
+
+              <button
+                id="cancel-btn"
+                onclick="resetForm()"
+                class="hidden bg-gray-600 hover:bg-gray-500 text-white font-bold py-3 px-4 rounded-lg"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- DAFTAR CATATAN -->
+      <div class="w-full">
+        <div class="flex justify-between items-end mb-2 px-2">
+          <h3
+            class="text-gray-400 text-sm font-semibold uppercase tracking-wider"
+          >
+            Daftar Pengingat
+          </h3>
+          <span
+            id="total-notes"
+            class="text-xs bg-white/10 px-2 py-1 rounded text-gray-300"
+            >Loading...</span
+          >
+        </div>
+
+        <div id="notes-list" class="flex flex-col gap-3">
+          <div class="flex justify-center py-10">
+            <div class="loader"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TOAST NOTIFICATION -->
+    <div
+      id="toast-container"
+      class="fixed bottom-5 left-1/2 transform -translate-x-1/2 z-50 flex flex-col gap-2 pointer-events-none w-full max-w-sm px-4"
+    ></div>
+
+    <!-- MODAL CONFIRMATION (DELETE) -->
+    <div
+      id="modal-overlay"
+      class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] hidden flex items-center justify-center p-4"
+    >
+      <div
+        class="glass-panel bg-[#1e1b4b] p-6 rounded-xl max-w-sm w-full shadow-2xl border border-gray-600 transform scale-100 transition-transform"
+      >
+        <h3 class="text-xl font-bold text-white mb-2">Hapus Catatan?</h3>
+        <p class="text-gray-300 mb-6">Data akan dihapus dari Cloud Storage.</p>
+        <div class="flex justify-end gap-3">
+          <button
+            onclick="closeModal()"
+            class="px-4 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-white font-medium"
+          >
+            Batal
+          </button>
+          <button
+            id="confirm-delete-btn"
+            class="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-500 text-white font-bold"
+          >
+            Hapus
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL TELEGRAM SETUP -->
+    <div
+      id="telegram-modal"
+      class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] hidden flex items-center justify-center p-4"
+    >
+      <div
+        class="glass-panel bg-[#1e1b4b] p-6 rounded-xl max-w-md w-full shadow-2xl border border-gray-600 transform scale-100 transition-transform"
+      >
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-xl font-bold text-white flex items-center gap-2">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#60a5fa"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <line x1="22" y1="2" x2="11" y2="13"></line>
+              <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+            </svg>
+            Setup Telegram Bot
+          </h3>
+          <button
+            onclick="closeTelegramModal()"
+            class="text-gray-400 hover:text-white"
+          >
+            ✕
+          </button>
+        </div>
+
+        <div class="space-y-4">
+          <p class="text-gray-300 text-sm">
+            Chat ID akan disinkronkan ke <b>Cloud Storage</b> (Tabel IDChat).
+          </p>
+
+          <div>
+            <label class="block text-xs text-cyan-400 mb-1 uppercase font-bold"
+              >Chat ID</label
+            >
+            <input
+              type="text"
+              id="telegram-chat-id"
+              placeholder="Menunggu sinkronisasi..."
+              class="w-full bg-black/30 border border-gray-500 rounded px-3 py-2 text-white focus:border-cyan-500 focus:outline-none"
+            />
+            <p class="text-[10px] text-gray-400 mt-1">
+              *Tips: Chat ke bot
+              <a
+                href="https://t.me/userinfobot"
+                target="_blank"
+                class="text-blue-400 underline"
+                >@userinfobot</a
+              >
+              di Telegram untuk melihat ID Anda.
+            </p>
+          </div>
+
+          <div class="flex justify-end gap-2 pt-2">
+            <button
+              onclick="testTelegram()"
+              class="px-4 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-white text-sm"
+            >
+              Tes Pesan
+            </button>
+            <button
+              onclick="saveTelegramSettings()"
+              class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm"
+            >
+              Simpan ke Cloud
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Script Logic -->
+    <script>
+      // --- 0. KONFIGURASI CLOUD ---
+      const NOCO_CONFIG = {
+        url: "https://nocodb.smf.web.id",
+        token: "MI7Y9DBKF6aJGtAGB8bAwUaI0oXTNRDKwywifzWe",
+        tableChat: "miii9vzjvimhsad", // IDChat
+        tableJadwal: "m83udwmm8indxgj", // Jadwal
+      };
+
+      const TELEGRAM_BOT_TOKEN =
+        "8040137929:AAGA45pKgFdOLhiBVfeuOpM7LQ9ucDWd9IA";
+
+      let notes = []; // Data lokal yang disync dengan Cloud
+      let telegramChatId = "";
+      let nocoChatRecordId = null; // ID Record untuk Chat ID di Cloud
+      let editModeId = null; // ID Lokal untuk mode edit
+
+      // --- UTILITIES: TOAST & STATUS ---
+      function showToast(message, type = "info") {
+        const container = document.getElementById("toast-container");
+        const toast = document.createElement("div");
+
+        let bgColor = "bg-gray-800";
+        if (type === "error") bgColor = "bg-red-600";
+        if (type === "success") bgColor = "bg-green-600";
+        if (type === "warning") bgColor = "bg-orange-600";
+
+        toast.className = `${bgColor} text-white px-6 py-3 rounded-lg shadow-lg text-sm font-medium text-center shadow-black/30 transition-all duration-300 transform translate-y-10 opacity-0`;
+        toast.innerText = message;
+
+        container.appendChild(toast);
+        requestAnimationFrame(() =>
+          toast.classList.remove("translate-y-10", "opacity-0"),
+        );
+        setTimeout(() => {
+          toast.classList.add("translate-y-10", "opacity-0");
+          setTimeout(() => toast.remove(), 500);
+        }, 3000);
+      }
+
+      function setCloudStatus(online) {
+        const dot = document.getElementById("cloud-dot");
+        const text = document.getElementById("cloud-text");
+        if (online) {
+          dot.className =
+            "w-2 h-2 rounded-full bg-green-500 shadow-[0_0_5px_#22c55e]";
+          text.innerText = "Connected";
+          text.className = "text-green-400";
+        } else {
+          dot.className = "w-2 h-2 rounded-full bg-red-500";
+          text.innerText = "Offline";
+          text.className = "text-red-400";
+        }
+      }
+
+      // --- 1. CLOUD API HANDLERS ---
+      async function fetchFromCloud(tableId) {
+        try {
+          const res = await fetch(
+            `${NOCO_CONFIG.url}/api/v2/tables/${tableId}/records?limit=100&shuffle=0&offset=0`,
+            {
+              headers: { "xc-token": NOCO_CONFIG.token },
+            },
+          );
+          if (!res.ok) throw new Error("Fetch Failed");
+          const data = await res.json();
+          return data.list;
+        } catch (e) {
+          setCloudStatus(false);
+          return null;
+        }
+      }
+
+      async function postToCloud(tableId, payload) {
+        const res = await fetch(
+          `${NOCO_CONFIG.url}/api/v2/tables/${tableId}/records`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "xc-token": NOCO_CONFIG.token,
+            },
+            body: JSON.stringify(payload),
+          },
+        );
+        if (!res.ok) {
+          const err = await res.text();
+          throw new Error(`${res.status} - ${err}`);
+        }
+        return await res.json();
+      }
+
+      async function patchToCloud(tableId, payload) {
+        const res = await fetch(
+          `${NOCO_CONFIG.url}/api/v2/tables/${tableId}/records`,
+          {
+            method: "PATCH",
+            headers: {
+              "Content-Type": "application/json",
+              "xc-token": NOCO_CONFIG.token,
+            },
+            body: JSON.stringify(payload),
+          },
+        );
+        if (!res.ok) {
+          const err = await res.text();
+          throw new Error(`${res.status} - ${err}`);
+        }
+        return await res.json();
+      }
+
+      async function deleteFromCloud(tableId, recordId) {
+        const res = await fetch(
+          `${NOCO_CONFIG.url}/api/v2/tables/${tableId}/records`,
+          {
+            method: "DELETE",
+            headers: {
+              "Content-Type": "application/json",
+              "xc-token": NOCO_CONFIG.token,
+            },
+            body: JSON.stringify({ Id: recordId }),
+          },
+        );
+        if (!res.ok) {
+          const err = await res.text();
+          throw new Error(`${res.status} - ${err}`);
+        }
+        return true;
+      }
+
+      // --- 2. DATA SYNCHRONIZATION ---
+      async function initData() {
+        setCloudStatus(true);
+
+        const chatRecords = await fetchFromCloud(NOCO_CONFIG.tableChat);
+        if (chatRecords && chatRecords.length > 0) {
+          telegramChatId = chatRecords[0].TelegramID || "";
+          nocoChatRecordId = chatRecords[0].Id;
+        } else {
+          telegramChatId = "";
+          nocoChatRecordId = null;
+        }
+
+        const jadwalRecords = await fetchFromCloud(NOCO_CONFIG.tableJadwal);
+        if (jadwalRecords) {
+          notes = jadwalRecords.map((rec) => {
+            let rawTime = rec.Time || "00:00";
+            if (rawTime.length > 5) rawTime = rawTime.substring(0, 5);
+
+            return {
+              id: rec.Id,
+              text: rec.Title || "",
+              message: rec.Notes || "",
+              time: rawTime,
+              repeatType: rec.RepeatType || "daily",
+              repeatInterval: rec.RepeatInterval
+                ? parseInt(rec.RepeatInterval)
+                : 1,
+              isRinging: false,
+            };
+          });
+          notes.sort((a, b) => a.time.localeCompare(b.time));
+          renderNotes();
+          setCloudStatus(true);
+        } else {
+          notes = [];
+          renderNotes();
+        }
+      }
+
+      async function saveTelegramSettings() {
+        const chatId = document.getElementById("telegram-chat-id").value.trim();
+        if (!chatId) return showToast("ID Kosong", "error");
+
+        const btn = document.querySelector("#telegram-modal button:last-child");
+        const originalText = btn.innerText;
+        btn.innerText = "Menyimpan...";
+        btn.disabled = true;
+
+        try {
+          if (nocoChatRecordId) {
+            await patchToCloud(NOCO_CONFIG.tableChat, {
+              Id: nocoChatRecordId,
+              TelegramID: chatId,
+            });
+          } else {
+            const res = await postToCloud(NOCO_CONFIG.tableChat, {
+              TelegramID: chatId,
+            });
+            nocoChatRecordId = res.Id;
+          }
+          telegramChatId = chatId;
+          showToast("Disimpan ke Cloud", "success");
+          closeTelegramModal();
+        } catch (e) {
+          showToast("Gagal simpan ID: " + e.message, "error");
+        } finally {
+          btn.innerText = originalText;
+          btn.disabled = false;
+        }
+      }
+
+      // --- 3. CRUD OPERATIONS ---
+      async function addOrUpdateNote() {
+        const text = document.getElementById("note-input").value.trim();
+        const message = document.getElementById("msg-input").value.trim();
+        const time = document.getElementById("time-input").value;
+        const repeatType = document.getElementById("repeat-type").value;
+        const intervalInput = document.getElementById("interval-input");
+        let repeatInterval = 1;
+
+        if (!text || !time)
+          return showToast("Judul & Jam wajib diisi!", "error");
+        if (repeatType === "custom") {
+          repeatInterval = parseInt(intervalInput.value);
+          if (!repeatInterval || repeatInterval < 1)
+            return showToast("Interval salah!", "error");
+        }
+
+        const btn = document.getElementById("add-btn");
+        const originalText = btn.innerHTML;
+        btn.innerHTML = `<div class="loader w-4 h-4 border-2"></div>`;
+        btn.disabled = true;
+
+        const timePayload = time.length === 5 ? time + ":00" : time;
+
+        const payload = {
+          Title: text,
+          Notes: message,
+          Time: timePayload,
+          RepeatType: repeatType,
+          RepeatInterval: Number(repeatInterval),
+        };
+
+        try {
+          if (editModeId) {
+            // UPDATE (PATCH)
+            payload.Id = editModeId;
+            await patchToCloud(NOCO_CONFIG.tableJadwal, payload);
+
+            const index = notes.findIndex((n) => n.id === editModeId);
+            if (index !== -1) {
+              notes[index] = {
+                ...notes[index],
+                id: editModeId,
+                text,
+                message,
+                time,
+                repeatType,
+                repeatInterval,
+              };
+            }
+            showToast("Diupdate di Cloud", "success");
+          } else {
+            // ADD (POST)
+            const res = await postToCloud(NOCO_CONFIG.tableJadwal, payload);
+
+            notes.push({
+              id: res.Id,
+              text,
+              message,
+              time,
+              repeatType,
+              repeatInterval,
+              isRinging: false,
+            });
+
+            showToast("Tersimpan di Cloud", "success");
+          }
+
+          notes.sort((a, b) => a.time.localeCompare(b.time));
+          resetForm();
+          renderNotes();
+        } catch (e) {
+          console.error("Critical Save Error:", e);
+          showToast(`Gagal: ${e.message}`, "error");
+        } finally {
+          btn.innerHTML = originalText;
+          btn.disabled = false;
+        }
+      }
+
+      let pendingDeleteId = null;
+      function requestDelete(id) {
+        pendingDeleteId = id;
+        document.getElementById("modal-overlay").classList.remove("hidden");
+      }
+
+      document
+        .getElementById("confirm-delete-btn")
+        .addEventListener("click", async () => {
+          if (pendingDeleteId) {
+            const btn = document.getElementById("confirm-delete-btn");
+            btn.innerText = "...";
+            try {
+              await deleteFromCloud(NOCO_CONFIG.tableJadwal, pendingDeleteId);
+              notes = notes.filter((n) => n.id !== pendingDeleteId);
+              renderNotes();
+              showToast("Dihapus dari Cloud");
+            } catch (e) {
+              showToast("Gagal hapus: " + e.message, "error");
+            }
+            closeModal();
+            btn.innerText = "Hapus";
+          }
+        });
+
+      // --- 4. RENDER & UI ---
+      function renderNotes() {
+        const listEl = document.getElementById("notes-list");
+        const countEl = document.getElementById("total-notes");
+
+        countEl.innerText = notes.length + " Catatan";
+        listEl.innerHTML = "";
+
+        if (notes.length === 0) {
+          listEl.innerHTML =
+            '<div class="text-center py-10 text-gray-500 italic">Belum ada catatan di Cloud.</div>';
+          return;
+        }
+
+        notes.forEach((note) => {
+          const el = document.createElement("div");
+          el.className = `glass-panel p-4 rounded-lg flex items-center justify-between transition hover:bg-white/10 group ${note.isRinging ? "border-red-500 bg-red-500/10" : ""}`;
+
+          const msgPreview = note.message
+            ? `<div class="text-xs text-gray-400 mt-1 truncate max-w-[200px]">💬 ${note.message}</div>`
+            : "";
+
+          el.innerHTML = `
+                    <div class="flex items-center gap-4 overflow-hidden">
+                        <div class="flex flex-col items-center justify-center bg-black/40 rounded-lg p-2 min-w-[80px]">
+                            <span class="text-2xl font-bold font-mono text-cyan-400">${note.time}</span>
+                            <span class="text-[10px] text-gray-400 uppercase">MULAI</span>
+                        </div>
+                        <div class="flex flex-col min-w-0">
+                            <span class="text-lg font-medium truncate ${note.isRinging ? "text-red-400 font-bold" : "text-white"}">${note.text}</span>
+                            ${msgPreview}
+                            <span class="text-xs text-yellow-400 font-semibold mt-1">🔄 ${getRepeatLabel(note)}</span>
+                        </div>
+                    </div>
+                    <div class="flex gap-2 ml-2">
+                        <button onclick="editNote(${note.id})" class="p-2 bg-blue-600/50 hover:bg-blue-600 rounded text-white transition" title="Edit">✎</button>
+                        <button onclick="requestDelete(${note.id})" class="p-2 bg-red-600/50 hover:bg-red-600 rounded text-white transition" title="Hapus">🗑</button>
+                    </div>
+                `;
+          listEl.appendChild(el);
+        });
+      }
+
+      function editNote(id) {
+        const note = notes.find((n) => n.id === id);
+        if (note) {
+          document.getElementById("note-input").value = note.text;
+          document.getElementById("msg-input").value = note.message || "";
+          document.getElementById("time-input").value = note.time;
+          document.getElementById("repeat-type").value =
+            note.repeatType || "daily";
+
+          if (note.repeatType === "custom") {
+            document.getElementById("interval-input").value =
+              note.repeatInterval;
+          } else {
+            document.getElementById("interval-input").value = "";
+          }
+          toggleIntervalInput();
+
+          document.getElementById("add-btn").innerHTML = "<span>SIMPAN</span>";
+          document.getElementById("add-btn").classList.add("bg-orange-500");
+          document.getElementById("cancel-btn").classList.remove("hidden");
+          editModeId = id;
+          window.scrollTo({ top: 0, behavior: "smooth" });
+          showToast("Mode Edit Aktif");
+        }
+      }
+
+      // --- 5. LOGIKA STANDARD ---
+
+      function sendTelegramAlert(note, currentRealTime) {
+        if (!telegramChatId) return;
+
+        const timeDisplay =
+          note.repeatType === "daily" ? note.time : currentRealTime;
+        const repeatLabel = getRepeatLabel(note);
+
+        let message = `🔔 <b>${note.text.toUpperCase()}</b> 🔔`;
+        if (note.message) message += `\n\n📝 ${note.message}`;
+
+        message += `\n\n⏰ Waktu: ${timeDisplay} WITA`;
+        message += `\n🔄 Status: ${repeatLabel}`;
+        message += `\n✅ <b>SUDAH DIMULAI</b>`;
+
+        const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage?chat_id=${telegramChatId}&text=${encodeURIComponent(message)}&parse_mode=HTML`;
+
+        fetch(url)
+          .then((r) => r.json())
+          .then((d) => {
+            if (!d.ok) console.error("Tele Error", d);
+          })
+          .catch((e) => console.error(e));
+      }
+
+      function testTelegram() {
+        const chatId = document.getElementById("telegram-chat-id").value.trim();
+        if (!chatId) return showToast("Isi ID!", "error");
+
+        const message =
+          "🔔 <b>TES KONEKSI</b> 🔔\n\n✅ Bot WITA Planner via Cloud Sync!";
+        const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(message)}&parse_mode=HTML`;
+
+        showToast("Mengirim...", "info");
+        fetch(url)
+          .then((r) => r.json())
+          .then((d) => {
+            if (d.ok) showToast("Sukses!", "success");
+            else showToast("Gagal: " + d.description, "error");
+          })
+          .catch(() => showToast("Error Net", "error"));
+      }
+
+      // --- ALARM CHECKER & CLOCK ---
+      function updateClock() {
+        try {
+          const now = new Date();
+          const optionsTime = {
+            timeZone: "Asia/Makassar",
+            hour12: false,
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+          };
+          const optionsDate = {
+            timeZone: "Asia/Makassar",
+            weekday: "long",
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+          };
+          const timeString = new Intl.DateTimeFormat("id-ID", optionsTime)
+            .format(now)
+            .replace(/\./g, ":");
+          const dateString = new Intl.DateTimeFormat(
+            "id-ID",
+            optionsDate,
+          ).format(now);
+
+          document.getElementById("clock-display").innerText = timeString;
+          document.getElementById("date-display").innerText = dateString;
+          checkAlarms(timeString);
+        } catch (e) {}
+      }
+
+      function checkAlarms(currentWitaTime) {
+        const currentHM = currentWitaTime.substring(0, 5);
+        const currentSeconds = parseInt(currentWitaTime.substring(6, 8));
+        const currentHour = parseInt(currentHM.substring(0, 2));
+        const currentMin = parseInt(currentHM.substring(3, 5));
+        const currentTotalMins = currentHour * 60 + currentMin;
+
+        let needRender = false;
+
+        notes.forEach((note) => {
+          let shouldRing = false;
+          const noteHour = parseInt(note.time.substring(0, 2));
+          const noteMin = parseInt(note.time.substring(3, 5));
+          const noteTotalMins = noteHour * 60 + noteMin;
+
+          if (note.repeatType === "daily") {
+            if (note.time === currentHM) shouldRing = true;
+          } else {
+            if (currentTotalMins >= noteTotalMins) {
+              const diff = currentTotalMins - noteTotalMins;
+              if (note.repeatType === "hourly") {
+                if (diff % 60 === 0) shouldRing = true;
+              } else if (note.repeatType === "custom") {
+                if (diff % note.repeatInterval === 0) shouldRing = true;
+              }
+            }
+          }
+
+          if (shouldRing) {
+            if (
+              currentSeconds === 0 ||
+              currentSeconds === 2 ||
+              currentSeconds === 4 ||
+              currentSeconds === 6
+            ) {
+              playTing(0.1); // Disamakan dengan tombol (0.1)
+              if (!note.isRinging) {
+                note.isRinging = true;
+                needRender = true;
+                showToast("ALARM: " + note.text, "error");
+                sendTelegramAlert(note, currentHM);
+              }
+            } else if (currentSeconds > 6) {
+              if (note.isRinging) {
+                note.isRinging = false;
+                needRender = true;
+              }
+            }
+          } else {
+            if (note.isRinging) {
+              note.isRinging = false;
+              needRender = true;
+            }
+          }
+        });
+        if (needRender) renderNotes();
+      }
+
+      // --- AUDIO ---
+      let audioCtx;
+      let isAudioEnabled = false;
+
+      function toggleAudio() {
+        const btn = document.getElementById("audio-btn");
+        const icon = document.getElementById("audio-icon");
+        const text = document.getElementById("audio-text");
+        if (isAudioEnabled) {
+          isAudioEnabled = false;
+          btn.classList.replace("bg-green-500/20", "bg-white/10");
+          btn.classList.replace("border-green-500", "border-white/10");
+          icon.innerText = "🔇";
+          text.innerText = "Klik untuk aktifkan";
+        } else {
+          try {
+            if (!audioCtx)
+              audioCtx = new (
+                window.AudioContext || window.webkitAudioContext
+              )();
+            if (audioCtx.state === "suspended") audioCtx.resume();
+            isAudioEnabled = true;
+            btn.classList.replace("bg-white/10", "bg-green-500/20");
+            btn.classList.replace("border-white/10", "border-green-500");
+            icon.innerText = "🔊";
+            text.innerText = "Suara Aktif";
+            playTing(0.1);
+          } catch (e) {}
+        }
+      }
+
+      function playTing(volume = 0.3) {
+        if (!isAudioEnabled || !audioCtx) return;
+        try {
+          const t = audioCtx.currentTime;
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+
+          // Ubah nada agar lebih lembut (sesuai request: 100Hz -> 1000Hz)
+          osc.type = "sine";
+          osc.frequency.setValueAtTime(200, t);
+          osc.frequency.exponentialRampToValueAtTime(400, t + 0.1);
+
+          gain.gain.setValueAtTime(0, t);
+          gain.gain.linearRampToValueAtTime(volume * 0.5, t + 0.05);
+          gain.gain.exponentialRampToValueAtTime(0.001, t + 2.0);
+
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start();
+          osc.stop(t + 2.0);
+        } catch (e) {}
+      }
+
+      // --- UTILS UI ---
+      function toggleIntervalInput() {
+        const type = document.getElementById("repeat-type").value;
+        const input = document.getElementById("interval-input");
+        if (type === "custom") {
+          input.classList.remove("hidden");
+          input.focus();
+        } else {
+          input.classList.add("hidden");
+        }
+      }
+      function closeModal() {
+        document.getElementById("modal-overlay").classList.add("hidden");
+        pendingDeleteId = null;
+      }
+      function openTelegramModal() {
+        document.getElementById("telegram-chat-id").value =
+          telegramChatId || "Loading...";
+        document.getElementById("telegram-modal").classList.remove("hidden");
+      }
+      function closeTelegramModal() {
+        document.getElementById("telegram-modal").classList.add("hidden");
+      }
+      function resetForm() {
+        document.getElementById("note-input").value = "";
+        document.getElementById("msg-input").value = "";
+        document.getElementById("time-input").value = "";
+        document.getElementById("repeat-type").value = "daily";
+        document.getElementById("interval-input").value = "";
+        toggleIntervalInput();
+        document.getElementById("add-btn").innerHTML = "<span>TAMBAH</span>";
+        document.getElementById("add-btn").classList.remove("bg-orange-500");
+        document.getElementById("cancel-btn").classList.add("hidden");
+        editModeId = null;
+      }
+      function getRepeatLabel(note) {
+        if (note.repeatType === "hourly") return "Setiap Jam";
+        if (note.repeatType === "custom")
+          return `Setiap ${note.repeatInterval} Menit`;
+        return "Setiap Hari";
+      }
+
+      // --- INIT ---
+      initData();
+      setInterval(updateClock, 1000);
+      updateClock();
+    </script>
+  </body>
+</html>
