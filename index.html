@@ -55,6 +55,29 @@
             animation: spin 1s linear infinite;
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* Volume Slider Styling */
+        input[type=range] {
+            -webkit-appearance: none; 
+            background: transparent; 
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #ffffff;
+            cursor: pointer;
+            margin-top: -6px; 
+            box-shadow: 0 0 5px rgba(0,0,0,0.5);
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: rgba(255,255,255,0.3);
+            border-radius: 2px;
+        }
     </style>
 </head>
 <body class="text-white flex flex-col items-center p-4 relative overflow-x-hidden">
@@ -87,10 +110,19 @@
                 Memuat Tanggal...
             </div>
             
-            <!-- Indikator Audio -->
-            <button id="audio-btn" onclick="toggleAudio()" class="mt-4 px-4 py-1 rounded-full text-xs bg-white/10 hover:bg-white/20 transition flex items-center gap-2 mx-auto border border-white/10 cursor-pointer z-10 relative">
-                <span id="audio-icon">🔇</span> <span id="audio-text">Klik untuk aktifkan suara alarm</span>
-            </button>
+            <!-- Kontrol Audio & Volume -->
+            <div class="mt-6 flex flex-col items-center gap-3">
+                <button id="audio-btn" onclick="toggleAudio()" class="px-6 py-2 rounded-full text-sm bg-white/10 hover:bg-white/20 transition flex items-center gap-2 border border-white/10 cursor-pointer z-10 relative shadow-lg">
+                    <span id="audio-icon">🔇</span> <span id="audio-text">Klik untuk aktifkan suara alarm</span>
+                </button>
+
+                <!-- Slider Volume -->
+                <div id="volume-wrapper" class="flex items-center gap-3 bg-black/30 px-4 py-2 rounded-lg border border-white/5 opacity-50 pointer-events-none transition-all duration-300">
+                    <span class="text-xs text-gray-400">🔈</span>
+                    <input type="range" id="volume-slider" min="0" max="100" value="10" oninput="updateVolume(this.value)" class="w-32">
+                    <span id="volume-display" class="text-xs font-mono w-8 text-right text-cyan-400">10%</span>
+                </div>
+            </div>
         </div>
 
         <!-- INPUT FORM -->
@@ -257,17 +289,22 @@
         // --- WAKE LOCK (KEEP SCREEN ON) ---
         let wakeLock = null;
         async function requestWakeLock() {
-            try {
-                wakeLock = await navigator.wakeLock.request('screen');
-                console.log('Wake Lock active');
-                wakeLock.addEventListener('release', () => {
-                    console.log('Wake Lock released');
-                });
-            } catch (err) {
-                console.error(`${err.name}, ${err.message}`);
+            if ('wakeLock' in navigator) {
+                try {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                    console.log('Wake Lock active');
+                    wakeLock.addEventListener('release', () => {
+                        console.log('Wake Lock released');
+                    });
+                } catch (err) {
+                    if (err.name !== 'NotAllowedError') {
+                        console.error(`${err.name}, ${err.message}`);
+                    } else {
+                        console.log('Wake Lock not allowed (policy restriction)');
+                    }
+                }
             }
         }
-        // Re-acquire lock when visibility changes (e.g. switching tabs and back)
         document.addEventListener('visibilitychange', async () => {
             if (wakeLock !== null && document.visibilityState === 'visible') {
                 await requestWakeLock();
@@ -638,7 +675,7 @@
 
                 if (shouldRing) {
                     if ((currentSeconds === 0 || currentSeconds === 2 || currentSeconds === 4 || currentSeconds === 6)) {
-                         playTing(0.1); 
+                         playTing(); 
                          if (!note.isRinging) {
                              note.isRinging = true;
                              needRender = true;
@@ -658,17 +695,29 @@
         // --- AUDIO ---
         let audioCtx;
         let isAudioEnabled = false;
+        let masterVolume = 0.1; // Default volume 10%
+
+        function updateVolume(val) {
+            masterVolume = val / 100;
+            document.getElementById('volume-display').innerText = val + "%";
+            if(isAudioEnabled) playTing(); // Feedback beep
+        }
 
         function toggleAudio() {
             const btn = document.getElementById("audio-btn");
             const icon = document.getElementById("audio-icon");
             const text = document.getElementById("audio-text");
+            const volWrapper = document.getElementById("volume-wrapper");
+
             if (isAudioEnabled) {
                 isAudioEnabled = false;
                 btn.classList.replace("bg-green-500/20", "bg-white/10");
                 btn.classList.replace("border-green-500", "border-white/10");
                 icon.innerText = "🔇";
-                text.innerText = "Klik untuk aktifkan";
+                text.innerText = "Klik untuk aktifkan suara alarm";
+                
+                // Disable Volume Slider UI
+                volWrapper.classList.add("opacity-50", "pointer-events-none");
             } else {
                 try {
                     if (!audioCtx)
@@ -681,24 +730,30 @@
                     btn.classList.replace("border-white/10", "border-green-500");
                     icon.innerText = "🔊";
                     text.innerText = "Suara Aktif";
-                    playTing(0.1); 
+                    
+                    // Enable Volume Slider UI
+                    volWrapper.classList.remove("opacity-50", "pointer-events-none");
+                    
+                    playTing(); 
                 } catch (e) {}
             }
         }
 
-        function playTing(volume = 0.3) {
+        function playTing() {
             if (!isAudioEnabled || !audioCtx) return;
             try {
                 const t = audioCtx.currentTime;
                 const osc = audioCtx.createOscillator();
                 const gain = audioCtx.createGain();
 
+                // Ubah nada agar lebih lembut (sesuai request: 100Hz -> 1000Hz)
                 osc.type = "sine";
                 osc.frequency.setValueAtTime(500, t);
                 osc.frequency.exponentialRampToValueAtTime(500, t + 0.1);
 
                 gain.gain.setValueAtTime(0, t);
-                gain.gain.linearRampToValueAtTime(volume * 0.5, t + 0.05);
+                // Gunakan masterVolume yang diatur oleh slider
+                gain.gain.linearRampToValueAtTime(masterVolume * 0.5, t + 0.05); 
                 gain.gain.exponentialRampToValueAtTime(0.001, t + 2.0);
 
                 osc.connect(gain);
