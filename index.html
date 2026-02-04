@@ -1,764 +1,1084 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>WITA Clock & Daily Alarm (Cloud Sync)</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Font Digital: Varela Round -->
-    <link href="https://fonts.googleapis.com/css2?family=Varela+Round&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <link
+      href="https://fonts.googleapis.com/css2?family=Varela+Round&family=Inter:wght@300;400;600&display=swap"
+      rel="stylesheet"
+    />
     <style>
-        body {
-            /* Background Paling Belakang: Biru Dongker (Deep Navy Gradient) */
-            background: linear-gradient(135deg, #020c1b 0%, #0a192f 50%, #112240 100%);
-            font-family: 'Inter', sans-serif;
-            min-height: 100vh;
-        }
-        .clock-font {
-            font-family: 'Varela Round', sans-serif;
-            /* Glow effect Cyan yang kontras dengan background hitam */
-            text-shadow: 0 0 30px rgba(34, 211, 238, 0.7);
-        }
-        .glass-panel {
-            /* Background Panel: Hitam Transparan */
-            background: rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(15px);
-            /* Border tipis putih transparan agar batas kotak terlihat */
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.8);
-        }
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.3); }
-        ::-webkit-scrollbar-thumb { background: #1e40af; border-radius: 4px; }
-        
-        .alarm-ring {
-            animation: ring 0.5s ease-in-out infinite;
-            color: #ef4444 !important;
-        }
-        @keyframes ring {
-            0% { transform: rotate(0deg); }
-            25% { transform: rotate(10deg); }
-            75% { transform: rotate(-10deg); }
-            100% { transform: rotate(0deg); }
-        }
+      body {
+        /* Background Paling Belakang: Biru Dongker (Deep Navy Gradient) */
+        background: linear-gradient(
+          135deg,
+          #020c1b 0%,
+          #0a192f 50%,
+          #112240 100%
+        );
+        font-family: "Inter", sans-serif;
+        min-height: 100vh;
+      }
+      .clock-font {
+        font-family: "Varela Round", sans-serif;
+        /* Glow effect Cyan yang kontras dengan background hitam */
+        text-shadow: 0 0 30px rgba(34, 211, 238, 0.7);
+      }
+      .glass-panel {
+        /* Background Panel: Hitam Transparan */
+        background: rgba(0, 0, 0, 0.6);
+        backdrop-filter: blur(15px);
+        /* Border tipis putih transparan agar batas kotak terlihat */
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.8);
+      }
+      /* Custom Scrollbar */
+      ::-webkit-scrollbar {
+        width: 8px;
+      }
+      ::-webkit-scrollbar-track {
+        background: rgba(0, 0, 0, 0.3);
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #1e40af;
+        border-radius: 4px;
+      }
 
-        /* Toast Animation */
-        .toast-enter { transform: translateY(100%); opacity: 0; }
-        .toast-enter-active { transform: translateY(0); opacity: 1; transition: all 0.3s ease-out; }
-        .toast-exit { transform: translateY(0); opacity: 1; }
-        .toast-exit-active { transform: translateY(100%); opacity: 0; transition: all 0.3s ease-in; }
+      .alarm-ring {
+        animation: ring 0.5s ease-in-out infinite;
+        color: #ef4444 !important;
+      }
+      @keyframes ring {
+        0% {
+          transform: rotate(0deg);
+        }
+        25% {
+          transform: rotate(10deg);
+        }
+        75% {
+          transform: rotate(-10deg);
+        }
+        100% {
+          transform: rotate(0deg);
+        }
+      }
 
-        /* Loader */
-        .loader {
-            border: 3px solid rgba(255,255,255,0.1);
-            border-left-color: #3b82f6;
-            border-radius: 50%;
-            width: 24px;
-            height: 24px;
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+      /* Toast Animation */
+      .toast-enter {
+        transform: translateY(100%);
+        opacity: 0;
+      }
+      .toast-enter-active {
+        transform: translateY(0);
+        opacity: 1;
+        transition: all 0.3s ease-out;
+      }
+      .toast-exit {
+        transform: translateY(0);
+        opacity: 1;
+      }
+      .toast-exit-active {
+        transform: translateY(100%);
+        opacity: 0;
+        transition: all 0.3s ease-in;
+      }
 
-        /* Volume Slider Styling */
-        input[type=range] {
-            -webkit-appearance: none; 
-            background: transparent; 
+      /* Loader */
+      .loader {
+        border: 3px solid rgba(255, 255, 255, 0.1);
+        border-left-color: #3b82f6;
+        border-radius: 50%;
+        width: 24px;
+        height: 24px;
+        animation: spin 1s linear infinite;
+      }
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
         }
-        input[type=range]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            height: 18px;
-            width: 18px;
-            border-radius: 50%;
-            background: #22d3ee; /* Warna Cyan untuk Thumb */
-            cursor: pointer;
-            margin-top: -7px; 
-            box-shadow: 0 0 10px rgba(34, 211, 238, 0.5);
+        100% {
+          transform: rotate(360deg);
         }
-        input[type=range]::-webkit-slider-runnable-track {
-            width: 100%;
-            height: 4px;
-            cursor: pointer;
-            background: rgba(255,255,255,0.2);
-            border-radius: 2px;
-        }
+      }
 
-        /* Input Icon Styling (Date/Time) */
-        input[type="time"]::-webkit-calendar-picker-indicator,
-        input[type="date"]::-webkit-calendar-picker-indicator {
-            filter: invert(1) brightness(100%);
-            cursor: pointer;
-            opacity: 0.8;
-        }
-        
-        /* Checkbox Styling */
-        .custom-checkbox {
-            appearance: none;
-            background-color: rgba(255,255,255,0.1);
-            margin: 0;
-            font: inherit;
-            color: #22d3ee;
-            width: 1.25em;
-            height: 1.25em;
-            border: 1px solid rgba(255,255,255,0.3);
-            border-radius: 0.25em;
-            display: grid;
-            place-content: center;
-            cursor: pointer;
-        }
-        .custom-checkbox::before {
-            content: "";
-            width: 0.75em;
-            height: 0.75em;
-            transform: scale(0);
-            transition: 120ms transform ease-in-out;
-            box-shadow: inset 1em 1em #22d3ee;
-            background-color: #22d3ee;
-            transform-origin: center;
-            clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
-        }
-        .custom-checkbox:checked::before {
-            transform: scale(1);
-        }
+      /* Volume Slider Styling */
+      input[type="range"] {
+        -webkit-appearance: none;
+        background: transparent;
+      }
+      input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        height: 18px;
+        width: 18px;
+        border-radius: 50%;
+        background: #22d3ee; /* Warna Cyan untuk Thumb */
+        cursor: pointer;
+        margin-top: -7px;
+        box-shadow: 0 0 10px rgba(34, 211, 238, 0.5);
+      }
+      input[type="range"]::-webkit-slider-runnable-track {
+        width: 100%;
+        height: 4px;
+        cursor: pointer;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 2px;
+      }
+
+      /* Input Icon Styling (Date/Time) */
+      input[type="time"]::-webkit-calendar-picker-indicator,
+      input[type="date"]::-webkit-calendar-picker-indicator {
+        filter: invert(1) brightness(100%);
+        cursor: pointer;
+        opacity: 0.8;
+      }
+
+      /* Checkbox Styling */
+      .custom-checkbox {
+        appearance: none;
+        background-color: rgba(255, 255, 255, 0.1);
+        margin: 0;
+        font: inherit;
+        color: #22d3ee;
+        width: 1.25em;
+        height: 1.25em;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 0.25em;
+        display: grid;
+        place-content: center;
+        cursor: pointer;
+      }
+      .custom-checkbox::before {
+        content: "";
+        width: 0.75em;
+        height: 0.75em;
+        transform: scale(0);
+        transition: 120ms transform ease-in-out;
+        box-shadow: inset 1em 1em #22d3ee;
+        background-color: #22d3ee;
+        transform-origin: center;
+        clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+      }
+      .custom-checkbox:checked::before {
+        transform: scale(1);
+      }
     </style>
-</head>
-<body class="text-white flex flex-col items-center p-3 md:p-6 relative overflow-x-hidden">
-
+  </head>
+  <body
+    class="text-white flex flex-col items-center p-3 md:p-6 relative overflow-x-hidden"
+  >
     <!-- Cloud Status Indicator -->
-    <div class="absolute top-4 left-4 z-40 flex items-center gap-2 px-3 py-1.5 bg-black/60 rounded-full text-xs border border-white/10 shadow-sm" id="cloud-status">
-        <div class="w-2.5 h-2.5 rounded-full bg-gray-500" id="cloud-dot"></div>
-        <span id="cloud-text" class="text-gray-300 font-medium">Connecting...</span>
+    <div
+      class="absolute top-4 left-4 z-40 flex items-center gap-2 px-3 py-1.5 bg-black/60 rounded-full text-xs border border-white/10 shadow-sm"
+      id="cloud-status"
+    >
+      <div class="w-2.5 h-2.5 rounded-full bg-gray-500" id="cloud-dot"></div>
+      <span id="cloud-text" class="text-gray-300 font-medium"
+        >Connecting...</span
+      >
     </div>
 
     <!-- Tombol Telegram Floating -->
-    <button onclick="openTelegramModal()" class="fixed top-4 right-4 bg-blue-600 hover:bg-blue-500 text-white p-3 rounded-full shadow-lg transition transform hover:scale-110 z-50 border border-white/10" title="Setup Telegram Bot">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+    <button
+      onclick="openTelegramModal()"
+      class="fixed top-4 right-4 bg-blue-600 hover:bg-blue-500 text-white p-3 rounded-full shadow-lg transition transform hover:scale-110 z-50 border border-white/10"
+      title="Setup Telegram Bot"
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <line x1="22" y1="2" x2="11" y2="13"></line>
+        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+      </svg>
     </button>
 
     <!-- Container Utama -->
-    <div class="w-full max-w-3xl flex flex-col items-center gap-5 md:gap-7 mt-4 md:mt-6 pb-24">
-        
-        <!-- JAM DIGITAL (WITA) -->
-        <div class="glass-panel w-full rounded-3xl p-6 md:p-10 text-center shadow-2xl relative overflow-hidden group">
-            <div class="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-cyan-400 to-blue-600"></div>
-            
-            <!-- Cloud Status Indicator (Mobile) -->
-            <div class="absolute top-4 left-4 z-10 flex items-center gap-2 px-2.5 py-1 bg-black/60 rounded-full text-[10px] md:text-xs border border-white/20 md:hidden" id="cloud-status-mobile">
-                <div class="w-2 h-2 rounded-full bg-gray-400" id="cloud-dot-mobile"></div>
-            </div>
+    <div
+      class="w-full max-w-3xl flex flex-col items-center gap-5 md:gap-7 mt-4 md:mt-6 pb-24"
+    >
+      <!-- JAM DIGITAL (WITA) -->
+      <div
+        class="glass-panel w-full rounded-3xl p-6 md:p-10 text-center shadow-2xl relative overflow-hidden group"
+      >
+        <div
+          class="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-cyan-400 to-blue-600"
+        ></div>
 
-            <h2 class="text-cyan-400 tracking-[0.2em] text-xs md:text-base font-bold mb-3 opacity-90 mt-6 md:mt-0 drop-shadow-md">WAKTU INDONESIA TENGAH (WITA)</h2>
-            
-            <div id="clock-display" class="clock-font text-6xl sm:text-7xl md:text-9xl font-bold text-cyan-400 mb-3 tracking-wide drop-shadow-2xl">
-                00:00:00
-            </div>
-            
-            <div id="date-display" class="text-gray-300 text-base md:text-2xl font-light tracking-wide drop-shadow-sm">
-                Memuat Tanggal...
-            </div>
-            
-            <!-- Kontrol Audio & Volume -->
-            <div class="mt-8 flex flex-col items-center gap-4">
-                <button id="audio-btn" onclick="toggleAudio()" class="px-8 py-2.5 rounded-full text-sm font-medium bg-white/5 hover:bg-white/10 transition flex items-center gap-2 border border-white/10 cursor-pointer z-10 relative shadow-lg active:scale-95">
-                    <span id="audio-icon">🔇</span> <span id="audio-text">Klik untuk aktifkan suara alarm</span>
-                </button>
-
-                <!-- Slider Volume -->
-                <div id="volume-wrapper" class="flex items-center gap-3 bg-black/40 px-5 py-3 rounded-xl border border-white/5 opacity-60 pointer-events-none transition-all duration-300 w-full max-w-[280px] justify-center">
-                    <span class="text-sm text-gray-400">🔈</span>
-                    <input type="range" id="volume-slider" min="0" max="100" value="10" oninput="updateVolume(this.value)" class="flex-1">
-                    <span id="volume-display" class="text-sm font-mono w-10 text-right text-cyan-400 font-bold">10%</span>
-                </div>
-            </div>
+        <!-- Cloud Status Indicator (Mobile) -->
+        <div
+          class="absolute top-4 left-4 z-10 flex items-center gap-2 px-2.5 py-1 bg-black/60 rounded-full text-[10px] md:text-xs border border-white/20 md:hidden"
+          id="cloud-status-mobile"
+        >
+          <div
+            class="w-2 h-2 rounded-full bg-gray-400"
+            id="cloud-dot-mobile"
+          ></div>
         </div>
 
-        <!-- INPUT FORM -->
-        <div class="glass-panel w-full rounded-2xl p-5 md:p-8 shadow-xl">
-            <h3 class="text-lg md:text-2xl font-bold mb-5 flex items-center gap-2 text-white/90">
-                📝 Tambah Jadwal & Alarm
-            </h3>
-            
-            <div class="flex flex-col gap-4">
-                <!-- Baris 1: Judul -->
-                <input type="text" id="note-input" placeholder="Judul Kegiatan (Contoh: Rapat Tim)" 
-                    class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3.5 focus:outline-none focus:border-cyan-400 focus:bg-white/10 transition text-white placeholder-gray-500 font-bold text-sm md:text-base shadow-inner">
-                
-                <!-- Baris 2: Pesan Tambahan (Isi) -->
-                <textarea id="msg-input" rows="2" placeholder="Isi Pesan Telegram (Opsional)" 
-                    class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3.5 focus:outline-none focus:border-cyan-400 focus:bg-white/10 transition text-white placeholder-gray-500 text-sm resize-none shadow-inner"></textarea>
+        <h2
+          class="text-cyan-400 tracking-[0.2em] text-xs md:text-base font-bold mb-3 opacity-90 mt-6 md:mt-0 drop-shadow-md"
+        >
+          WAKTU INDONESIA TENGAH (WITA)
+        </h2>
 
-                <!-- Baris 3: Tanggal & Waktu -->
-                <div class="flex flex-col md:flex-row gap-4">
-                    <!-- TANGGAL -->
-                    <div class="flex-1">
-                        <label class="text-[11px] text-gray-300 uppercase font-bold ml-1 mb-1 block tracking-wider">Mulai Tanggal</label>
-                        <input type="date" id="date-input" 
-                            class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3.5 focus:outline-none focus:border-cyan-400 focus:bg-white/10 transition text-white scheme-dark cursor-pointer font-medium h-[52px]">
-                    </div>
-                    
-                    <!-- JAM (Custom Selector) -->
-                    <div class="flex-1">
-                        <label class="text-[11px] text-gray-300 uppercase font-bold ml-1 mb-1 block tracking-wider">Jam (WITA)</label>
-                        <div class="flex gap-2 items-center justify-center bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus-within:border-cyan-400 focus-within:bg-white/10 transition h-[52px]">
-                            <select id="hour-input" class="bg-transparent text-white text-center font-bold text-xl outline-none appearance-none cursor-pointer w-14 hover:text-cyan-300 border-none p-0 focus:ring-0">
-                                <!-- JS will populate -->
-                            </select>
-                            <span class="text-white font-bold text-xl mb-1">:</span>
-                            <select id="minute-input" class="bg-transparent text-white text-center font-bold text-xl outline-none appearance-none cursor-pointer w-14 hover:text-cyan-300 border-none p-0 focus:ring-0">
-                                <!-- JS will populate -->
-                            </select>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Baris 4: Opsi Perulangan -->
-                <div class="flex flex-wrap items-center gap-4 bg-white/5 p-4 rounded-xl border border-white/10 hover:bg-white/10 transition">
-                    <label class="flex items-center gap-3 cursor-pointer select-none min-w-fit">
-                        <input type="checkbox" id="loop-check" class="custom-checkbox text-cyan-400" onchange="toggleLoopOptions()">
-                        <span class="text-sm md:text-base font-semibold text-gray-300">Ulangi Jadwal?</span>
-                    </label>
-
-                    <div id="loop-options" class="flex-1 flex gap-3 hidden animate-fade-in w-full md:w-auto">
-                        <select id="repeat-type" onchange="toggleIntervalInput()" class="flex-1 bg-black/40 border border-white/20 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-cyan-500">
-                            <option value="interval">Tiap X Menit (Tipe A)</option>
-                            <option value="daily">Setiap Hari (Tipe B)</option>
-                            <option value="weekly">Setiap Minggu (Tipe B)</option>
-                            <option value="monthly">Setiap Bulan (Tipe B)</option>
-                        </select>
-                        
-                        <input type="number" id="interval-input" min="1" max="1440" placeholder="Menit" 
-                            class="w-24 bg-black/40 border border-white/20 rounded-lg px-2 py-2 text-white text-center text-sm focus:outline-none focus:border-cyan-500 font-bold">
-                    </div>
-                    
-                    <p id="loop-hint" class="text-[11px] text-gray-500 italic w-full">
-                        *Jika tidak dicentang, jadwal otomatis dihapus setelah berbunyi.
-                    </p>
-                </div>
-
-                <!-- Baris 5: Password & Tombol -->
-                <div class="flex flex-col md:flex-row gap-4 mt-2 pt-4 border-t border-white/10">
-                    <input type="password" id="admin-pass" placeholder="Password (Wajib)" 
-                        class="flex-1 bg-white/5 border border-red-500/20 rounded-xl px-4 py-3.5 focus:outline-none focus:border-red-500 focus:bg-white/10 transition text-white placeholder-red-400/30 text-sm md:text-base">
-
-                    <div class="flex gap-3 w-full md:w-auto">
-                        <button id="add-btn" onclick="addOrUpdateNote()" 
-                            class="flex-1 md:flex-none bg-gradient-to-r from-cyan-600 to-blue-700 hover:from-cyan-500 hover:to-blue-600 text-white font-bold py-3.5 px-8 rounded-xl shadow-lg transition transform hover:scale-[1.02] active:scale-95 whitespace-nowrap flex items-center justify-center gap-2 w-full md:w-auto text-sm md:text-base border border-white/10">
-                            <span>TAMBAH</span>
-                        </button>
-                        
-                        <button id="cancel-btn" onclick="resetForm()" class="hidden bg-gray-700 hover:bg-gray-600 text-white font-bold py-3 px-5 rounded-xl border border-white/10">
-                            ✕
-                        </button>
-                    </div>
-                </div>
-            </div>
+        <div
+          id="clock-display"
+          class="clock-font text-6xl sm:text-7xl md:text-9xl font-bold text-cyan-400 mb-3 tracking-wide drop-shadow-2xl"
+        >
+          00:00:00
         </div>
 
-        <!-- DAFTAR CATATAN -->
-        <div class="w-full">
-            <div class="flex justify-between items-end mb-3 px-2">
-                <h3 class="text-gray-400 text-xs md:text-sm font-bold uppercase tracking-widest border-b-2 border-cyan-500/30 pb-1">Daftar Pengingat</h3>
-                <span id="total-notes" class="text-[10px] md:text-xs bg-white/5 px-3 py-1 rounded-full text-gray-400 border border-white/5">Loading...</span>
-            </div>
-            
-            <div id="notes-list" class="flex flex-col gap-4">
-                <div class="flex justify-center py-10">
-                    <div class="loader"></div>
-                </div>
-            </div>
+        <div
+          id="date-display"
+          class="text-gray-300 text-base md:text-2xl font-light tracking-wide drop-shadow-sm"
+        >
+          Memuat Tanggal...
         </div>
 
-        <!-- FOOTER -->
-        <div class="mt-8 mb-4 text-center">
-            <p class="text-[10px] text-cyan-200 font-mono tracking-[0.2em] font-bold drop-shadow-[0_0_5px_rgba(34,211,238,0.8)] opacity-70">
-                CREATE BY SMF RAHSANTIKAAA. ALL RIGHTS RESERVED. VERSION 1.0
+        <!-- Kontrol Audio & Volume -->
+        <div class="mt-8 flex flex-col items-center gap-4">
+          <button
+            id="audio-btn"
+            onclick="toggleAudio()"
+            class="px-8 py-2.5 rounded-full text-sm font-medium bg-white/5 hover:bg-white/10 transition flex items-center gap-2 border border-white/10 cursor-pointer z-10 relative shadow-lg active:scale-95"
+          >
+            <span id="audio-icon">🔇</span>
+            <span id="audio-text">Klik untuk aktifkan suara alarm</span>
+          </button>
+
+          <!-- Slider Volume -->
+          <div
+            id="volume-wrapper"
+            class="flex items-center gap-3 bg-black/40 px-5 py-3 rounded-xl border border-white/5 opacity-60 pointer-events-none transition-all duration-300 w-full max-w-[280px] justify-center"
+          >
+            <span class="text-sm text-gray-400">🔈</span>
+            <input
+              type="range"
+              id="volume-slider"
+              min="0"
+              max="100"
+              value="10"
+              oninput="updateVolume(this.value)"
+              class="flex-1"
+            />
+            <span
+              id="volume-display"
+              class="text-sm font-mono w-10 text-right text-cyan-400 font-bold"
+              >10%</span
+            >
+          </div>
+        </div>
+      </div>
+
+      <!-- INPUT FORM -->
+      <div class="glass-panel w-full rounded-2xl p-5 md:p-8 shadow-xl">
+        <h3
+          class="text-lg md:text-2xl font-bold mb-5 flex items-center gap-2 text-white/90"
+        >
+          📝 Tambah Jadwal & Alarm
+        </h3>
+
+        <div class="flex flex-col gap-4">
+          <!-- Baris 1: Judul -->
+          <input
+            type="text"
+            id="note-input"
+            placeholder="Judul Kegiatan (Contoh: Rapat Tim)"
+            class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3.5 focus:outline-none focus:border-cyan-400 focus:bg-white/10 transition text-white placeholder-gray-500 font-bold text-sm md:text-base shadow-inner"
+          />
+
+          <!-- Baris 2: Pesan Tambahan (Isi) -->
+          <textarea
+            id="msg-input"
+            rows="2"
+            placeholder="Isi Pesan Telegram (Opsional)"
+            class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3.5 focus:outline-none focus:border-cyan-400 focus:bg-white/10 transition text-white placeholder-gray-500 text-sm resize-none shadow-inner"
+          ></textarea>
+
+          <!-- Baris 3: Tanggal & Waktu -->
+          <div class="flex flex-col md:flex-row gap-4">
+            <!-- TANGGAL -->
+            <div class="flex-1">
+              <label
+                class="text-[11px] text-gray-300 uppercase font-bold ml-1 mb-1 block tracking-wider"
+                >Mulai Tanggal</label
+              >
+              <input
+                type="date"
+                id="date-input"
+                class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3.5 focus:outline-none focus:border-cyan-400 focus:bg-white/10 transition text-white scheme-dark cursor-pointer font-medium h-[52px]"
+              />
+            </div>
+
+            <!-- JAM (Custom Selector) -->
+            <div class="flex-1">
+              <label
+                class="text-[11px] text-gray-300 uppercase font-bold ml-1 mb-1 block tracking-wider"
+                >Jam (WITA)</label
+              >
+              <div
+                class="flex gap-2 items-center justify-center bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus-within:border-cyan-400 focus-within:bg-white/10 transition h-[52px]"
+              >
+                <select
+                  id="hour-input"
+                  class="bg-transparent text-white text-center font-bold text-xl outline-none appearance-none cursor-pointer w-14 hover:text-cyan-300 border-none p-0 focus:ring-0"
+                >
+                  <!-- JS will populate -->
+                </select>
+                <span class="text-white font-bold text-xl mb-1">:</span>
+                <select
+                  id="minute-input"
+                  class="bg-transparent text-white text-center font-bold text-xl outline-none appearance-none cursor-pointer w-14 hover:text-cyan-300 border-none p-0 focus:ring-0"
+                >
+                  <!-- JS will populate -->
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Baris 4: Opsi Perulangan -->
+          <div
+            class="flex flex-wrap items-center gap-4 bg-white/5 p-4 rounded-xl border border-white/10 hover:bg-white/10 transition"
+          >
+            <label
+              class="flex items-center gap-3 cursor-pointer select-none min-w-fit"
+            >
+              <input
+                type="checkbox"
+                id="loop-check"
+                class="custom-checkbox text-cyan-400"
+                onchange="toggleLoopOptions()"
+              />
+              <span class="text-sm md:text-base font-semibold text-gray-100"
+                >Ulangi Jadwal?</span
+              >
+            </label>
+
+            <div
+              id="loop-options"
+              class="flex-1 flex gap-3 hidden animate-fade-in w-full md:w-auto"
+            >
+              <select
+                id="repeat-type"
+                onchange="toggleIntervalInput()"
+                class="flex-1 bg-black/40 border border-white/20 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-cyan-500"
+              >
+                <option value="interval">Tiap X Menit (Tipe A)</option>
+                <option value="daily">Setiap Hari (Tipe B)</option>
+                <option value="weekly">Setiap Minggu (Tipe B)</option>
+                <option value="monthly">Setiap Bulan (Tipe B)</option>
+              </select>
+
+              <input
+                type="number"
+                id="interval-input"
+                min="1"
+                max="1440"
+                placeholder="Menit"
+                class="w-24 bg-black/40 border border-white/20 rounded-lg px-2 py-2 text-white text-center text-sm focus:outline-none focus:border-cyan-500 font-bold"
+              />
+            </div>
+
+            <p id="loop-hint" class="text-[11px] text-gray-400 italic w-full">
+              *Jika tidak dicentang, jadwal otomatis dihapus setelah berbunyi.
             </p>
+          </div>
+
+          <!-- Baris 5: Password & Tombol -->
+          <div
+            class="flex flex-col md:flex-row gap-4 mt-2 pt-4 border-t border-white/10"
+          >
+            <input
+              type="password"
+              id="admin-pass"
+              placeholder="Password (Wajib)"
+              class="flex-1 bg-white/5 border border-red-500/20 rounded-xl px-4 py-3.5 focus:outline-none focus:border-red-500 focus:bg-white/10 transition text-white placeholder-red-400/30 text-sm md:text-base"
+            />
+
+            <div class="flex gap-3 w-full md:w-auto">
+              <button
+                id="add-btn"
+                onclick="addOrUpdateNote()"
+                class="flex-1 md:flex-none bg-gradient-to-r from-cyan-600 to-blue-700 hover:from-cyan-500 hover:to-blue-600 text-white font-bold py-3.5 px-8 rounded-xl shadow-lg transition transform hover:scale-[1.02] active:scale-95 whitespace-nowrap flex items-center justify-center gap-2 w-full md:w-auto text-sm md:text-base border border-white/10"
+              >
+                <span>TAMBAH</span>
+              </button>
+
+              <button
+                id="cancel-btn"
+                onclick="resetForm()"
+                class="hidden bg-gray-700 hover:bg-gray-600 text-white font-bold py-3 px-5 rounded-xl border border-white/10"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- DAFTAR CATATAN -->
+      <div class="w-full">
+        <div class="flex justify-between items-end mb-3 px-2">
+          <h3
+            class="text-gray-400 text-xs md:text-sm font-bold uppercase tracking-widest border-b-2 border-cyan-500/30 pb-1"
+          >
+            Daftar Pengingat
+          </h3>
+          <span
+            id="total-notes"
+            class="text-[10px] md:text-xs bg-white/5 px-3 py-1 rounded-full text-gray-400 border border-white/5"
+            >Loading...</span
+          >
         </div>
 
+        <div id="notes-list" class="flex flex-col gap-4">
+          <div class="flex justify-center py-10">
+            <div class="loader"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- FOOTER -->
+      <div class="mt-8 mb-4 text-center">
+        <p
+          class="text-[10px] text-cyan-200 font-mono tracking-[0.2em] font-bold drop-shadow-[0_0_5px_rgba(34,211,238,0.8)] opacity-70"
+        >
+          CREATE BY SMF RAHSANTIKAAA. ALL RIGHTS RESERVED. VERSION 1.0
+        </p>
+      </div>
     </div>
 
     <!-- TOAST NOTIFICATION -->
-    <div id="toast-container" class="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-[70] flex flex-col gap-3 pointer-events-none w-full max-w-sm px-4"></div>
+    <div
+      id="toast-container"
+      class="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-[70] flex flex-col gap-3 pointer-events-none w-full max-w-sm px-4"
+    ></div>
 
     <!-- MODAL TELEGRAM SETUP -->
-    <div id="telegram-modal" class="fixed inset-0 bg-black/90 backdrop-blur-md z-[60] hidden flex items-center justify-center p-4">
-        <div class="glass-panel bg-[#0b1221] p-6 rounded-2xl max-w-md w-full shadow-2xl border border-gray-700 transform scale-100 transition-transform">
-            <div class="flex justify-between items-center mb-5">
-                <h3 class="text-xl font-bold text-white flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
-                    Setup Telegram Bot
-                </h3>
-                <button onclick="closeTelegramModal()" class="text-gray-400 hover:text-white transition bg-white/5 rounded-full p-1">✕</button>
-            </div>
-            
-            <div class="space-y-5">
-                <div class="flex justify-between items-end border-b border-gray-800 pb-2">
-                    <p class="text-gray-400 text-sm font-medium">Daftar Chat ID Terdaftar</p>
-                    <span id="chat-count" class="text-xs bg-blue-600 px-2 py-0.5 rounded-md text-white font-bold shadow-sm">0</span>
-                </div>
-
-                <!-- LIST CHAT ID -->
-                <div id="chat-id-list" class="max-h-36 overflow-y-auto bg-black/40 rounded-lg border border-gray-700 p-2 space-y-1.5 text-sm text-gray-300 font-mono scrollbar-thin">
-                    <div class="text-center text-gray-500 text-xs italic py-2">Memuat data...</div>
-                </div>
-                
-                <div class="space-y-3">
-                    <div>
-                        <label class="block text-xs text-cyan-400 mb-1.5 uppercase font-bold tracking-wide">Tambah Chat ID Baru</label>
-                        <input type="text" id="telegram-chat-id" placeholder="Contoh: 123456789" 
-                            class="w-full bg-black/40 border border-gray-600 rounded-lg px-3 py-2.5 text-white focus:border-cyan-500 focus:outline-none placeholder-gray-600">
-                    </div>
-                    
-                    <div>
-                        <input type="password" id="tele-pass" placeholder="Password (Wajib)" 
-                            class="w-full bg-black/40 border border-red-500/30 rounded-lg px-3 py-2.5 text-white focus:border-red-500 focus:outline-none text-sm placeholder-red-400/30">
-                    </div>
-
-                    <p class="text-[11px] text-gray-400 bg-white/5 p-2 rounded">
-                        *Tips: Chat ke bot <a href="https://t.me/userinfobot" target="_blank" class="text-blue-400 underline font-bold">@userinfobot</a> untuk melihat ID Anda.
-                    </p>
-                </div>
-
-                <div class="flex justify-end gap-3 pt-2">
-                    <button onclick="testTelegram()" class="px-4 py-2.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-white text-sm font-medium transition border border-gray-600">Tes Pesan</button>
-                    <button onclick="saveTelegramSettings()" class="px-5 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm shadow-md transition transform hover:-translate-y-0.5">Simpan ke Cloud</button>
-                </div>
-            </div>
+    <div
+      id="telegram-modal"
+      class="fixed inset-0 bg-black/90 backdrop-blur-md z-[60] hidden flex items-center justify-center p-4"
+    >
+      <div
+        class="glass-panel bg-[#0b1221] p-6 rounded-2xl max-w-md w-full shadow-2xl border border-gray-700 transform scale-100 transition-transform"
+      >
+        <div class="flex justify-between items-center mb-5">
+          <h3 class="text-xl font-bold text-white flex items-center gap-2">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="22"
+              height="22"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#60a5fa"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <line x1="22" y1="2" x2="11" y2="13"></line>
+              <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+            </svg>
+            Setup Telegram Bot
+          </h3>
+          <button
+            onclick="closeTelegramModal()"
+            class="text-gray-400 hover:text-white transition bg-white/5 rounded-full p-1"
+          >
+            ✕
+          </button>
         </div>
+
+        <div class="space-y-5">
+          <div
+            class="flex justify-between items-end border-b border-gray-800 pb-2"
+          >
+            <p class="text-gray-400 text-sm font-medium">
+              Daftar Chat ID Terdaftar
+            </p>
+            <span
+              id="chat-count"
+              class="text-xs bg-blue-600 px-2 py-0.5 rounded-md text-white font-bold shadow-sm"
+              >0</span
+            >
+          </div>
+
+          <!-- LIST CHAT ID -->
+          <div
+            id="chat-id-list"
+            class="max-h-36 overflow-y-auto bg-black/40 rounded-lg border border-gray-700 p-2 space-y-1.5 text-sm text-gray-300 font-mono scrollbar-thin"
+          >
+            <div class="text-center text-gray-500 text-xs italic py-2">
+              Memuat data...
+            </div>
+          </div>
+
+          <div class="space-y-3">
+            <div>
+              <label
+                class="block text-xs text-cyan-400 mb-1.5 uppercase font-bold tracking-wide"
+                >Tambah Chat ID Baru</label
+              >
+              <input
+                type="text"
+                id="telegram-chat-id"
+                placeholder="Contoh: 123456789"
+                class="w-full bg-black/40 border border-gray-600 rounded-lg px-3 py-2.5 text-white focus:border-cyan-500 focus:outline-none placeholder-gray-600"
+              />
+            </div>
+
+            <div>
+              <input
+                type="password"
+                id="tele-pass"
+                placeholder="Password (Wajib)"
+                class="w-full bg-black/40 border border-red-500/30 rounded-lg px-3 py-2.5 text-white focus:border-red-500 focus:outline-none text-sm placeholder-red-400/30"
+              />
+            </div>
+
+            <p class="text-[11px] text-gray-400 bg-white/5 p-2 rounded">
+              *Tips: Chat ke bot
+              <a
+                href="https://t.me/userinfobot"
+                target="_blank"
+                class="text-blue-400 underline font-bold"
+                >@userinfobot</a
+              >
+              untuk melihat ID Anda.
+            </p>
+          </div>
+
+          <div class="flex justify-end gap-3 pt-2">
+            <button
+              onclick="testTelegram()"
+              class="px-4 py-2.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-white text-sm font-medium transition border border-gray-600"
+            >
+              Tes Pesan
+            </button>
+            <button
+              onclick="saveTelegramSettings()"
+              class="px-5 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm shadow-md transition transform hover:-translate-y-0.5"
+            >
+              Simpan ke Cloud
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Script Logic -->
     <script>
-        // --- 0. KONFIGURASI CLOUD ---
-        const NOCO_CONFIG = {
-            url: "https://nocodb.smf.web.id",
-            token: "MI7Y9DBKF6aJGtAGB8bAwUaI0oXTNRDKwywifzWe",
-            tableChat: "miii9vzjvimhsad",   // IDChat
-            tableJadwal: "m83udwmm8indxgj",  // Jadwal
-            tableVolume: "mnoqefcguxgsz90"   // Volume
+      // --- 0. KONFIGURASI CLOUD ---
+      const NOCO_CONFIG = {
+        url: "https://nocodb.smf.web.id",
+        token: "MI7Y9DBKF6aJGtAGB8bAwUaI0oXTNRDKwywifzWe",
+        tableChat: "miii9vzjvimhsad", // IDChat
+        tableJadwal: "m83udwmm8indxgj", // Jadwal
+        tableVolume: "mnoqefcguxgsz90", // Volume
+      };
+
+      const TELEGRAM_BOT_TOKEN =
+        "8040137929:AAGA45pKgFdOLhiBVfeuOpM7LQ9ucDWd9IA";
+      const ADMIN_PASS = "wah12345";
+
+      let notes = [];
+      let telegramChatIds = [];
+      let editModeId = null;
+      let volumeRecordId = null;
+
+      let lastDateWita = "";
+
+      // --- INIT Options ---
+      function initTimeSelects() {
+        const hourSelect = document.getElementById("hour-input");
+        const minuteSelect = document.getElementById("minute-input");
+
+        hourSelect.innerHTML = "";
+        minuteSelect.innerHTML = "";
+
+        for (let i = 0; i < 24; i++) {
+          const opt = document.createElement("option");
+          const val = i.toString().padStart(2, "0");
+          opt.value = val;
+          opt.innerText = val;
+          opt.className = "text-black";
+          hourSelect.appendChild(opt);
+        }
+
+        for (let i = 0; i < 60; i++) {
+          const opt = document.createElement("option");
+          const val = i.toString().padStart(2, "0");
+          opt.value = val;
+          opt.innerText = val;
+          opt.className = "text-black";
+          minuteSelect.appendChild(opt);
+        }
+
+        const now = new Date();
+        const nowWitaString = new Intl.DateTimeFormat("id-ID", {
+          timeZone: "Asia/Makassar",
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: false,
+        }).format(now);
+
+        const [h, m] = nowWitaString.split(":");
+        if (h && m) {
+          hourSelect.value = h.trim();
+          minuteSelect.value = m.trim();
+        }
+
+        // Date input initialization is now handled in updateClock
+      }
+
+      // --- UTILITIES ---
+      function showToast(message, type = "info") {
+        const container = document.getElementById("toast-container");
+        const toast = document.createElement("div");
+
+        let bgColor = "bg-gray-800/90";
+        let icon = "ℹ️";
+        if (type === "error") {
+          bgColor = "bg-red-600/90";
+          icon = "❌";
+        }
+        if (type === "success") {
+          bgColor = "bg-green-600/90";
+          icon = "✅";
+        }
+        if (type === "warning") {
+          bgColor = "bg-orange-600/90";
+          icon = "⚠️";
+        }
+
+        toast.className = `${bgColor} backdrop-blur-md text-white px-6 py-4 rounded-xl shadow-2xl text-sm font-semibold text-center border border-white/10 transition-all duration-300 transform translate-y-10 opacity-0 flex items-center justify-center gap-2`;
+        toast.innerHTML = `<span>${icon}</span><span>${message}</span>`;
+
+        container.appendChild(toast);
+        requestAnimationFrame(() =>
+          toast.classList.remove("translate-y-10", "opacity-0"),
+        );
+        setTimeout(() => {
+          toast.classList.add("translate-y-10", "opacity-0");
+          setTimeout(() => toast.remove(), 500);
+        }, 3000);
+      }
+
+      function setCloudStatus(online) {
+        const dot = document.getElementById("cloud-dot");
+        const text = document.getElementById("cloud-text");
+        const dotMob = document.getElementById("cloud-dot-mobile");
+
+        if (online) {
+          const style =
+            "w-2.5 h-2.5 rounded-full bg-green-500 shadow-[0_0_8px_#22c55e]";
+          dot.className = style;
+          if (dotMob) dotMob.className = style;
+          text.innerText = "Connected";
+          text.className = "text-green-300 font-semibold";
+        } else {
+          const style = "w-2.5 h-2.5 rounded-full bg-red-500";
+          dot.className = style;
+          if (dotMob) dotMob.className = style;
+          text.innerText = "Offline";
+          text.className = "text-red-400 font-semibold";
+        }
+      }
+
+      function maskChatId(id) {
+        if (!id) return "";
+        const strId = String(id);
+        if (strId.length <= 6) return strId;
+        return (
+          strId.substring(0, 3) + "•••" + strId.substring(strId.length - 3)
+        );
+      }
+
+      // --- WAKE LOCK ---
+      let wakeLock = null;
+      async function requestWakeLock() {
+        if ("wakeLock" in navigator) {
+          try {
+            wakeLock = await navigator.wakeLock.request("screen");
+          } catch (err) {}
+        }
+      }
+      document.addEventListener("visibilitychange", async () => {
+        if (wakeLock !== null && document.visibilityState === "visible") {
+          await requestWakeLock();
+        }
+      });
+
+      // --- 1. CLOUD API HANDLERS ---
+      async function fetchFromCloud(tableId) {
+        try {
+          const res = await fetch(
+            `${NOCO_CONFIG.url}/api/v2/tables/${tableId}/records?limit=100&shuffle=0&offset=0`,
+            {
+              headers: { "xc-token": NOCO_CONFIG.token },
+            },
+          );
+          if (!res.ok) throw new Error("Fetch Failed");
+          const data = await res.json();
+          return data.list;
+        } catch (e) {
+          setCloudStatus(false);
+          return null;
+        }
+      }
+
+      async function postToCloud(tableId, payload) {
+        const res = await fetch(
+          `${NOCO_CONFIG.url}/api/v2/tables/${tableId}/records`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "xc-token": NOCO_CONFIG.token,
+            },
+            body: JSON.stringify(payload),
+          },
+        );
+        if (!res.ok) throw new Error("Post Failed");
+        return await res.json();
+      }
+
+      async function patchToCloud(tableId, payload) {
+        const res = await fetch(
+          `${NOCO_CONFIG.url}/api/v2/tables/${tableId}/records`,
+          {
+            method: "PATCH",
+            headers: {
+              "Content-Type": "application/json",
+              "xc-token": NOCO_CONFIG.token,
+            },
+            body: JSON.stringify(payload),
+          },
+        );
+        if (!res.ok) throw new Error("Patch Failed");
+        return await res.json();
+      }
+
+      async function deleteFromCloud(tableId, recordId) {
+        const res = await fetch(
+          `${NOCO_CONFIG.url}/api/v2/tables/${tableId}/records`,
+          {
+            method: "DELETE",
+            headers: {
+              "Content-Type": "application/json",
+              "xc-token": NOCO_CONFIG.token,
+            },
+            body: JSON.stringify({ Id: recordId }),
+          },
+        );
+        if (!res.ok) throw new Error("Delete Failed");
+        return true;
+      }
+
+      // --- 2. DATA SYNCHRONIZATION ---
+      async function initData() {
+        setCloudStatus(true);
+        requestWakeLock();
+
+        // 1. Chat IDs
+        const chatRecords = await fetchFromCloud(NOCO_CONFIG.tableChat);
+        if (chatRecords) {
+          telegramChatIds = chatRecords.map((r) => ({
+            recordId: r.Id,
+            chatId: r.TelegramID,
+          }));
+        }
+        updateChatIdListUI();
+
+        // 2. Volume
+        try {
+          const volRecords = await fetchFromCloud(NOCO_CONFIG.tableVolume);
+          if (volRecords && volRecords.length > 0) {
+            const rec = volRecords[0];
+            volumeRecordId = rec.Id;
+            const volVal =
+              rec.vol !== undefined && rec.vol !== null ? rec.vol : 10;
+            masterVolume = volVal / 100;
+            document.getElementById("volume-slider").value = volVal;
+            document.getElementById("volume-display").innerText = volVal + "%";
+          } else {
+            const res = await postToCloud(NOCO_CONFIG.tableVolume, { vol: 10 });
+            volumeRecordId = res.Id;
+          }
+        } catch (e) {
+          console.log("Vol Err", e);
+        }
+
+        // 3. Jadwal (NOTES)
+        const jadwalRecords = await fetchFromCloud(NOCO_CONFIG.tableJadwal);
+        if (jadwalRecords) {
+          notes = jadwalRecords.map((rec) => {
+            let rawTime = rec.Time || "00:00";
+            if (rawTime.length > 5) rawTime = rawTime.substring(0, 5);
+
+            // FORCE BOOLEAN FROM DB
+            let loopVal = false;
+            if (rec.Loop === true || rec.Loop === 1 || rec.Loop === "true")
+              loopVal = true;
+
+            return {
+              id: rec.Id,
+              text: rec.Title || "",
+              message: rec.Notes || "",
+              time: rawTime,
+              targetDate: rec.Date || "",
+              isLoop: loopVal,
+              repeatType: rec.RepeatType || "interval",
+              repeatInterval: rec.RepeatInterval
+                ? parseInt(rec.RepeatInterval)
+                : 30,
+              isRinging: false,
+            };
+          });
+          notes.sort((a, b) => {
+            if (a.targetDate !== b.targetDate)
+              return a.targetDate.localeCompare(b.targetDate);
+            return a.time.localeCompare(b.time);
+          });
+          renderNotes();
+          setCloudStatus(true);
+        } else {
+          notes = [];
+          renderNotes();
+        }
+      }
+
+      function updateChatIdListUI() {
+        const listContainer = document.getElementById("chat-id-list");
+        const countBadge = document.getElementById("chat-count");
+
+        // Safety check
+        if (countBadge) {
+          countBadge.innerText = telegramChatIds.length;
+        }
+
+        if (listContainer) {
+          listContainer.innerHTML = "";
+
+          if (telegramChatIds.length === 0) {
+            listContainer.innerHTML =
+              '<div class="text-center text-gray-500 text-xs italic py-4">Belum ada Chat ID terdaftar.</div>';
+            return;
+          }
+
+          telegramChatIds.forEach((item) => {
+            const div = document.createElement("div");
+            div.className =
+              "flex justify-between items-center bg-white/5 px-3 py-2 rounded-lg border border-white/5";
+            div.innerHTML = `<span class="font-mono text-cyan-300 tracking-wider">${maskChatId(item.chatId)}</span><span class="text-[10px] text-green-400 bg-green-900/30 px-2 py-0.5 rounded border border-green-500/30">Aktif</span>`;
+            listContainer.appendChild(div);
+          });
+        }
+      }
+
+      async function saveTelegramSettings() {
+        const chatId = document.getElementById("telegram-chat-id").value.trim();
+        const pass = document.getElementById("tele-pass").value;
+
+        if (!chatId) return showToast("Chat ID Kosong!", "error");
+        if (pass !== ADMIN_PASS) return showToast("Password Salah!", "error");
+
+        const btn = document.querySelector("#telegram-modal button:last-child");
+        const originalText = btn.innerText;
+        btn.innerText = "Menyimpan...";
+        btn.disabled = true;
+
+        try {
+          const res = await postToCloud(NOCO_CONFIG.tableChat, {
+            TelegramID: chatId,
+          });
+          telegramChatIds.push({
+            recordId: res.Id,
+            chatId: chatId,
+          });
+          updateChatIdListUI();
+          document.getElementById("telegram-chat-id").value = "";
+          document.getElementById("tele-pass").value = "";
+          showToast("Chat ID Berhasil Ditambahkan", "success");
+        } catch (e) {
+          showToast("Gagal simpan: " + e.message, "error");
+        } finally {
+          btn.innerText = originalText;
+          btn.disabled = false;
+        }
+      }
+
+      // --- 3. CRUD OPERATIONS ---
+      async function addOrUpdateNote() {
+        const passInput = document.getElementById("admin-pass");
+        if (passInput.value !== ADMIN_PASS) {
+          return showToast("Password Salah!", "error");
+        }
+
+        const text = document.getElementById("note-input").value.trim();
+        const message = document.getElementById("msg-input").value.trim();
+        const dateVal = document.getElementById("date-input").value;
+
+        const hour = document.getElementById("hour-input").value;
+        const minute = document.getElementById("minute-input").value;
+        const time = `${hour}:${minute}`;
+
+        const isLoop = document.getElementById("loop-check").checked;
+        const repeatType = document.getElementById("repeat-type").value;
+        const intervalInput = document.getElementById("interval-input");
+        let interval = 30;
+
+        if (!text || !dateVal)
+          return showToast("Judul & Tanggal wajib diisi!", "error");
+
+        if (isLoop && repeatType === "interval") {
+          interval = parseInt(intervalInput.value);
+          if (!interval || interval < 1)
+            return showToast("Interval salah!", "error");
+        }
+
+        const btn = document.getElementById("add-btn");
+        const originalText = btn.innerHTML;
+        btn.innerHTML = `<div class="loader w-4 h-4 border-2"></div>`;
+        btn.disabled = true;
+
+        const timePayload = time + ":00";
+
+        // FORCE Boolean to true/false for NocoDB
+        const loopVal = isLoop;
+
+        const payload = {
+          Title: text,
+          Notes: message,
+          Time: timePayload,
+          Date: dateVal,
+          Loop: loopVal,
+          RepeatType: isLoop ? repeatType : null,
+          RepeatInterval: isLoop ? Number(interval) : null,
         };
 
-        const TELEGRAM_BOT_TOKEN = "8040137929:AAGA45pKgFdOLhiBVfeuOpM7LQ9ucDWd9IA";
-        const ADMIN_PASS = "wah12345";
-        
-        let notes = []; 
-        let telegramChatIds = []; 
-        let editModeId = null; 
-        let volumeRecordId = null; 
-        
-        let lastDateWita = ""; 
+        try {
+          if (editModeId) {
+            payload.Id = editModeId;
+            await patchToCloud(NOCO_CONFIG.tableJadwal, payload);
 
-        // --- INIT Options ---
-        function initTimeSelects() {
-            const hourSelect = document.getElementById('hour-input');
-            const minuteSelect = document.getElementById('minute-input');
-            
-            hourSelect.innerHTML = "";
-            minuteSelect.innerHTML = "";
-
-            for(let i=0; i<24; i++) {
-                const opt = document.createElement('option');
-                const val = i.toString().padStart(2, '0');
-                opt.value = val;
-                opt.innerText = val;
-                opt.className = "text-black"; 
-                hourSelect.appendChild(opt);
+            const index = notes.findIndex((n) => n.id === editModeId);
+            if (index !== -1) {
+              notes[index] = {
+                ...notes[index],
+                id: editModeId,
+                text,
+                message,
+                time,
+                targetDate: dateVal,
+                isLoop,
+                repeatType,
+                repeatInterval: interval,
+              };
             }
-            
-            for(let i=0; i<60; i++) {
-                const opt = document.createElement('option');
-                const val = i.toString().padStart(2, '0');
-                opt.value = val;
-                opt.innerText = val;
-                opt.className = "text-black";
-                minuteSelect.appendChild(opt);
-            }
-            
-            const now = new Date();
-            const nowWitaString = new Intl.DateTimeFormat('id-ID', { 
-                timeZone: 'Asia/Makassar', hour: '2-digit', minute: '2-digit', hour12: false 
-            }).format(now);
-            
-            const [h, m] = nowWitaString.split(':');
-            if(h && m) {
-                hourSelect.value = h.trim(); 
-                minuteSelect.value = m.trim();
-            }
-
-            // Date input initialization is now handled in updateClock
-        }
-
-        // --- UTILITIES ---
-        function showToast(message, type = 'info') {
-            const container = document.getElementById('toast-container');
-            const toast = document.createElement('div');
-            
-            let bgColor = 'bg-gray-800/90';
-            let icon = 'ℹ️';
-            if (type === 'error') { bgColor = 'bg-red-600/90'; icon = '❌'; }
-            if (type === 'success') { bgColor = 'bg-green-600/90'; icon = '✅'; }
-            if (type === 'warning') { bgColor = 'bg-orange-600/90'; icon = '⚠️'; }
-
-            toast.className = `${bgColor} backdrop-blur-md text-white px-6 py-4 rounded-xl shadow-2xl text-sm font-semibold text-center border border-white/10 transition-all duration-300 transform translate-y-10 opacity-0 flex items-center justify-center gap-2`;
-            toast.innerHTML = `<span>${icon}</span><span>${message}</span>`;
-
-            container.appendChild(toast);
-            requestAnimationFrame(() => toast.classList.remove('translate-y-10', 'opacity-0'));
-            setTimeout(() => {
-                toast.classList.add('translate-y-10', 'opacity-0');
-                setTimeout(() => toast.remove(), 500);
-            }, 3000);
-        }
-
-        function setCloudStatus(online) {
-            const dot = document.getElementById('cloud-dot');
-            const text = document.getElementById('cloud-text');
-            const dotMob = document.getElementById('cloud-dot-mobile');
-            
-            if (online) {
-                const style = "w-2.5 h-2.5 rounded-full bg-green-500 shadow-[0_0_8px_#22c55e]";
-                dot.className = style;
-                if(dotMob) dotMob.className = style;
-                text.innerText = "Connected";
-                text.className = "text-green-300 font-semibold";
-            } else {
-                const style = "w-2.5 h-2.5 rounded-full bg-red-500";
-                dot.className = style;
-                if(dotMob) dotMob.className = style;
-                text.innerText = "Offline";
-                text.className = "text-red-400 font-semibold";
-            }
-        }
-
-        function maskChatId(id) {
-            if (!id) return "";
-            const strId = String(id);
-            if (strId.length <= 6) return strId;
-            return strId.substring(0, 3) + "•••" + strId.substring(strId.length - 3);
-        }
-
-        // --- WAKE LOCK ---
-        let wakeLock = null;
-        async function requestWakeLock() {
-            if ('wakeLock' in navigator) {
-                try {
-                    wakeLock = await navigator.wakeLock.request('screen');
-                } catch (err) {}
-            }
-        }
-        document.addEventListener('visibilitychange', async () => {
-            if (wakeLock !== null && document.visibilityState === 'visible') {
-                await requestWakeLock();
-            }
-        });
-
-        // --- 1. CLOUD API HANDLERS ---
-        async function fetchFromCloud(tableId) {
-            try {
-                const res = await fetch(`${NOCO_CONFIG.url}/api/v2/tables/${tableId}/records?limit=100&shuffle=0&offset=0`, {
-                    headers: { 'xc-token': NOCO_CONFIG.token }
-                });
-                if (!res.ok) throw new Error("Fetch Failed");
-                const data = await res.json();
-                return data.list;
-            } catch (e) {
-                setCloudStatus(false);
-                return null;
-            }
-        }
-
-        async function postToCloud(tableId, payload) {
-            const res = await fetch(`${NOCO_CONFIG.url}/api/v2/tables/${tableId}/records`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'xc-token': NOCO_CONFIG.token },
-                body: JSON.stringify(payload)
+            showToast("Diupdate di Cloud", "success");
+          } else {
+            const res = await postToCloud(NOCO_CONFIG.tableJadwal, payload);
+            notes.push({
+              id: res.Id,
+              text,
+              message,
+              time,
+              targetDate: dateVal,
+              isLoop,
+              repeatType,
+              repeatInterval: interval,
+              isRinging: false,
             });
-            if (!res.ok) throw new Error("Post Failed");
-            return await res.json();
+            showToast("Tersimpan di Cloud", "success");
+          }
+
+          notes.sort((a, b) => a.time.localeCompare(b.time));
+          resetForm();
+          renderNotes();
+        } catch (e) {
+          showToast(`Gagal: ${e.message}`, "error");
+        } finally {
+          btn.innerHTML = originalText;
+          btn.disabled = false;
+        }
+      }
+
+      async function requestDelete(id) {
+        const passInput = document.getElementById("admin-pass");
+        if (passInput.value !== ADMIN_PASS) {
+          showToast("Password Salah! Isi di kolom bawah.", "error");
+          passInput.focus();
+          passInput.classList.add("border-red-500", "animate-pulse");
+          setTimeout(() => passInput.classList.remove("animate-pulse"), 1000);
+          return;
         }
 
-        async function patchToCloud(tableId, payload) {
-            const res = await fetch(`${NOCO_CONFIG.url}/api/v2/tables/${tableId}/records`, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json', 'xc-token': NOCO_CONFIG.token },
-                body: JSON.stringify(payload)
-            });
-            if (!res.ok) throw new Error("Patch Failed");
-            return await res.json();
+        if (confirm("Yakin ingin menghapus jadwal ini?")) {
+          try {
+            await deleteFromCloud(NOCO_CONFIG.tableJadwal, id);
+            notes = notes.filter((n) => n.id !== id);
+            renderNotes();
+            showToast("Dihapus dari Cloud", "success");
+          } catch (e) {
+            showToast("Gagal hapus: " + e.message, "error");
+          }
         }
+      }
 
-        async function deleteFromCloud(tableId, recordId) {
-            const res = await fetch(`${NOCO_CONFIG.url}/api/v2/tables/${tableId}/records`, {
-                method: 'DELETE',
-                headers: { 'Content-Type': 'application/json', 'xc-token': NOCO_CONFIG.token },
-                body: JSON.stringify({ Id: recordId })
-            });
-            if (!res.ok) throw new Error("Delete Failed");
-            return true;
+      // --- 4. RENDER & UI ---
+      function formatDateFriendly(isoDateStr) {
+        if (!isoDateStr) return "-";
+        const [y, m, d] = isoDateStr.split("-");
+        const dateObj = new Date(y, m - 1, d);
+        return new Intl.DateTimeFormat("id-ID", {
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        }).format(dateObj);
+      }
+
+      function renderNotes() {
+        const listEl = document.getElementById("notes-list");
+        const countEl = document.getElementById("total-notes");
+        countEl.innerText = notes.length + " Catatan";
+        listEl.innerHTML = "";
+        if (notes.length === 0) {
+          listEl.innerHTML =
+            '<div class="text-center py-10 text-gray-500 italic">Belum ada catatan di Cloud.</div>';
+          return;
         }
+        notes.forEach((note) => {
+          const el = document.createElement("div");
+          el.className = `glass-panel p-4 md:p-5 rounded-2xl flex items-center justify-between transition hover:bg-white/10 group border border-white/5 ${note.isRinging ? "border-green-500 bg-green-900/20" : ""}`;
 
-        // --- 2. DATA SYNCHRONIZATION ---
-        async function initData() {
-            setCloudStatus(true);
-            requestWakeLock();
-            
-            // 1. Chat IDs
-            const chatRecords = await fetchFromCloud(NOCO_CONFIG.tableChat);
-            if (chatRecords) {
-                telegramChatIds = chatRecords.map(r => ({ recordId: r.Id, chatId: r.TelegramID }));
-            }
-            updateChatIdListUI();
+          const msgPreview = note.message
+            ? `<div class="text-xs text-gray-400 mt-1.5 truncate max-w-[200px] flex items-center gap-1"><span>💬</span> ${note.message}</div>`
+            : "";
+          const loopBadge = note.isLoop
+            ? `<span class="text-[10px] md:text-xs text-yellow-300 bg-yellow-900/30 px-2 py-0.5 rounded border border-yellow-500/30 mt-2 inline-block font-medium">🔄 ${getRepeatLabel(note)}</span>`
+            : `<span class="text-[10px] md:text-xs text-blue-300 bg-blue-900/30 px-2 py-0.5 rounded border border-blue-500/30 mt-2 inline-block font-medium">⚡ Sekali Jalan</span>`;
 
-            // 2. Volume
-            try {
-                const volRecords = await fetchFromCloud(NOCO_CONFIG.tableVolume);
-                if (volRecords && volRecords.length > 0) {
-                    const rec = volRecords[0];
-                    volumeRecordId = rec.Id;
-                    const volVal = (rec.vol !== undefined && rec.vol !== null) ? rec.vol : 10;
-                    masterVolume = volVal / 100;
-                    document.getElementById('volume-slider').value = volVal;
-                    document.getElementById('volume-display').innerText = volVal + "%";
-                } else {
-                    const res = await postToCloud(NOCO_CONFIG.tableVolume, { vol: 10 });
-                    volumeRecordId = res.Id;
-                }
-            } catch (e) { console.log("Vol Err", e); }
+          const dateStr = formatDateFriendly(note.targetDate);
 
-            // 3. Jadwal (NOTES)
-            const jadwalRecords = await fetchFromCloud(NOCO_CONFIG.tableJadwal);
-            if (jadwalRecords) {
-                notes = jadwalRecords.map(rec => {
-                    let rawTime = rec.Time || "00:00";
-                    if(rawTime.length > 5) rawTime = rawTime.substring(0, 5);
-                    
-                    // FORCE BOOLEAN FROM DB
-                    let loopVal = false;
-                    if(rec.Loop === true || rec.Loop === 1 || rec.Loop === "true") loopVal = true;
-
-                    return {
-                        id: rec.Id, 
-                        text: rec.Title || "", 
-                        message: rec.Notes || "",
-                        time: rawTime, 
-                        targetDate: rec.Date || "", 
-                        isLoop: loopVal, 
-                        repeatType: rec.RepeatType || "interval", 
-                        repeatInterval: rec.RepeatInterval ? parseInt(rec.RepeatInterval) : 30, 
-                        isRinging: false
-                    };
-                });
-                notes.sort((a, b) => {
-                    if (a.targetDate !== b.targetDate) return a.targetDate.localeCompare(b.targetDate);
-                    return a.time.localeCompare(b.time);
-                });
-                renderNotes();
-                setCloudStatus(true);
-            } else {
-                notes = [];
-                renderNotes();
-            }
-        }
-
-        function updateChatIdListUI() {
-            const listContainer = document.getElementById('chat-id-list');
-            const countBadge = document.getElementById('chat-count');
-            
-            // Safety check
-            if (countBadge) {
-                countBadge.innerText = telegramChatIds.length;
-            }
-            
-            if (listContainer) {
-                listContainer.innerHTML = '';
-
-                if (telegramChatIds.length === 0) {
-                    listContainer.innerHTML = '<div class="text-center text-gray-500 text-xs italic py-4">Belum ada Chat ID terdaftar.</div>';
-                    return;
-                }
-
-                telegramChatIds.forEach(item => {
-                    const div = document.createElement('div');
-                    div.className = "flex justify-between items-center bg-white/5 px-3 py-2 rounded-lg border border-white/5";
-                    div.innerHTML = `<span class="font-mono text-cyan-300 tracking-wider">${maskChatId(item.chatId)}</span><span class="text-[10px] text-green-400 bg-green-900/30 px-2 py-0.5 rounded border border-green-500/30">Aktif</span>`;
-                    listContainer.appendChild(div);
-                });
-            }
-        }
-
-        async function saveTelegramSettings() {
-            const chatId = document.getElementById('telegram-chat-id').value.trim();
-            const pass = document.getElementById('tele-pass').value;
-
-            if (!chatId) return showToast("Chat ID Kosong!", "error");
-            if (pass !== ADMIN_PASS) return showToast("Password Salah!", "error");
-
-            const btn = document.querySelector("#telegram-modal button:last-child");
-            const originalText = btn.innerText;
-            btn.innerText = "Menyimpan...";
-            btn.disabled = true;
-
-            try {
-                const res = await postToCloud(NOCO_CONFIG.tableChat, { TelegramID: chatId });
-                telegramChatIds.push({
-                    recordId: res.Id,
-                    chatId: chatId
-                });
-                updateChatIdListUI();
-                document.getElementById('telegram-chat-id').value = '';
-                document.getElementById('tele-pass').value = '';
-                showToast("Chat ID Berhasil Ditambahkan", "success");
-            } catch (e) {
-                showToast("Gagal simpan: " + e.message, "error");
-            } finally {
-                btn.innerText = originalText;
-                btn.disabled = false;
-            }
-        }
-
-        // --- 3. CRUD OPERATIONS ---
-        async function addOrUpdateNote() {
-            const passInput = document.getElementById('admin-pass');
-            if (passInput.value !== ADMIN_PASS) {
-                return showToast("Password Salah!", "error");
-            }
-
-            const text = document.getElementById('note-input').value.trim();
-            const message = document.getElementById('msg-input').value.trim();
-            const dateVal = document.getElementById('date-input').value; 
-            
-            const hour = document.getElementById('hour-input').value;
-            const minute = document.getElementById('minute-input').value;
-            const time = `${hour}:${minute}`;
-            
-            const isLoop = document.getElementById('loop-check').checked;
-            const repeatType = document.getElementById('repeat-type').value;
-            const intervalInput = document.getElementById('interval-input');
-            let interval = 30;
-
-            if (!text || !dateVal) return showToast("Judul & Tanggal wajib diisi!", "error");
-            
-            if (isLoop && repeatType === 'interval') {
-                interval = parseInt(intervalInput.value);
-                if (!interval || interval < 1) return showToast("Interval salah!", "error");
-            }
-
-            const btn = document.getElementById('add-btn');
-            const originalText = btn.innerHTML;
-            btn.innerHTML = `<div class="loader w-4 h-4 border-2"></div>`;
-            btn.disabled = true;
-
-            const timePayload = time + ":00";
-
-            // FORCE Boolean to 1/0 for NocoDB compatibility
-            const loopVal = isLoop ? 1 : 0;
-
-            const payload = {
-                Title: text,
-                Notes: message,
-                Time: timePayload,
-                Date: dateVal,       
-                Loop: loopVal,        
-                RepeatType: isLoop ? repeatType : null,
-                RepeatInterval: isLoop ? Number(interval) : null
-            };
-
-            try {
-                if (editModeId) {
-                    payload.Id = editModeId;
-                    await patchToCloud(NOCO_CONFIG.tableJadwal, payload);
-                    
-                    const index = notes.findIndex(n => n.id === editModeId);
-                    if (index !== -1) {
-                        notes[index] = { 
-                            ...notes[index], 
-                            id: editModeId, text, message, time, 
-                            targetDate: dateVal, isLoop, repeatType, repeatInterval: interval 
-                        };
-                    }
-                    showToast("Diupdate di Cloud", "success");
-                } else {
-                    const res = await postToCloud(NOCO_CONFIG.tableJadwal, payload);
-                    notes.push({
-                        id: res.Id, 
-                        text, message, time, 
-                        targetDate: dateVal, isLoop, repeatType, repeatInterval: interval, 
-                        isRinging: false
-                    });
-                    showToast("Tersimpan di Cloud", "success");
-                }
-                
-                notes.sort((a, b) => a.time.localeCompare(b.time));
-                resetForm();
-                renderNotes();
-
-            } catch (e) {
-                showToast(`Gagal: ${e.message}`, "error");
-            } finally {
-                btn.innerHTML = originalText;
-                btn.disabled = false;
-            }
-        }
-
-        async function requestDelete(id) {
-            const passInput = document.getElementById('admin-pass');
-            if (passInput.value !== ADMIN_PASS) {
-                showToast("Password Salah! Isi di kolom bawah.", "error");
-                passInput.focus();
-                passInput.classList.add('border-red-500', 'animate-pulse');
-                setTimeout(() => passInput.classList.remove('animate-pulse'), 1000);
-                return;
-            }
-
-            if(confirm("Yakin ingin menghapus jadwal ini?")) {
-                try {
-                    await deleteFromCloud(NOCO_CONFIG.tableJadwal, id);
-                    notes = notes.filter(n => n.id !== id);
-                    renderNotes();
-                    showToast("Dihapus dari Cloud", "success");
-                } catch(e) {
-                    showToast("Gagal hapus: " + e.message, "error");
-                }
-            }
-        }
-
-        // --- 4. RENDER & UI ---
-        function formatDateFriendly(isoDateStr) {
-            if (!isoDateStr) return "-";
-            const [y, m, d] = isoDateStr.split('-');
-            const dateObj = new Date(y, m - 1, d);
-            return new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }).format(dateObj);
-        }
-
-        function renderNotes() {
-            const listEl = document.getElementById('notes-list');
-            const countEl = document.getElementById('total-notes');
-            countEl.innerText = notes.length + " Catatan";
-            listEl.innerHTML = '';
-            if (notes.length === 0) {
-                listEl.innerHTML = '<div class="text-center py-10 text-gray-500 italic">Belum ada catatan di Cloud.</div>';
-                return;
-            }
-            notes.forEach(note => {
-                const el = document.createElement('div');
-                el.className = `glass-panel p-4 md:p-5 rounded-2xl flex items-center justify-between transition hover:bg-white/10 group border border-white/5 ${note.isRinging ? 'border-green-500 bg-green-900/20' : ''}`;
-                
-                const msgPreview = note.message ? `<div class="text-xs text-gray-400 mt-1.5 truncate max-w-[200px] flex items-center gap-1"><span>💬</span> ${note.message}</div>` : '';
-                const loopBadge = note.isLoop 
-                    ? `<span class="text-[10px] md:text-xs text-yellow-300 bg-yellow-900/30 px-2 py-0.5 rounded border border-yellow-500/30 mt-2 inline-block font-medium">🔄 ${getRepeatLabel(note)}</span>`
-                    : `<span class="text-[10px] md:text-xs text-blue-300 bg-blue-900/30 px-2 py-0.5 rounded border border-blue-500/30 mt-2 inline-block font-medium">⚡ Sekali Jalan</span>`;
-
-                const dateStr = formatDateFriendly(note.targetDate);
-
-                el.innerHTML = `
+          el.innerHTML = `
                     <div class="flex items-center gap-4 overflow-hidden w-full">
                         <div class="flex flex-col items-center justify-center bg-black/30 rounded-xl p-2.5 min-w-[85px] border border-white/10">
                             <span class="text-2xl font-bold font-mono text-cyan-400">${note.time}</span>
                             <span class="text-[9px] text-gray-400 uppercase text-center leading-tight mt-1 px-1">${dateStr}</span>
                         </div>
                         <div class="flex flex-col min-w-0 flex-1">
-                            <span class="text-lg font-bold truncate ${note.isRinging ? 'text-green-400' : 'text-white'}">${note.text}</span>
+                            <span class="text-lg font-bold truncate ${note.isRinging ? "text-green-400" : "text-white"}">${note.text}</span>
                             ${msgPreview}
                             <div>${loopBadge}</div>
                         </div>
@@ -768,307 +1088,392 @@
                         <button onclick="requestDelete(${note.id})" class="p-2 bg-red-600/30 hover:bg-red-600 rounded-lg text-white transition border border-red-500/30" title="Hapus">🗑</button>
                     </div>
                 `;
-                listEl.appendChild(el);
-            });
-        }
-
-        function editNote(id) {
-            const passInput = document.getElementById('admin-pass');
-            if (passInput.value !== ADMIN_PASS) {
-                showToast("Password Salah! Isi di kolom bawah.", "error");
-                passInput.focus();
-                return;
-            }
-            const note = notes.find(n => n.id === id);
-            if (note) {
-                document.getElementById('note-input').value = note.text;
-                document.getElementById('msg-input').value = note.message || '';
-                document.getElementById('date-input').value = note.targetDate;
-                
-                const [h, m] = note.time.split(':');
-                if(h && m) {
-                    document.getElementById('hour-input').value = h;
-                    document.getElementById('minute-input').value = m;
-                }
-                
-                document.getElementById('loop-check').checked = note.isLoop;
-                toggleLoopOptions();
-                
-                if(note.isLoop) {
-                    document.getElementById('repeat-type').value = note.repeatType || 'interval';
-                    if (note.repeatType === 'interval') {
-                        document.getElementById('interval-input').value = note.repeatInterval;
-                    }
-                    toggleIntervalInput();
-                }
-
-                document.getElementById('add-btn').innerHTML = "<span>SIMPAN</span>";
-                document.getElementById('add-btn').classList.add('bg-orange-500');
-                document.getElementById('cancel-btn').classList.remove('hidden');
-                editModeId = id;
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-                showToast("Mode Edit Aktif");
-            }
-        }
-
-        // --- 5. LOGIKA ALARM (FINAL REFINED) ---
-        function checkAlarms(currentWitaTime) {
-            const now = new Date();
-            const optionsDate = { timeZone: 'Asia/Makassar', year: 'numeric', month: '2-digit', day: '2-digit' };
-            const parts = new Intl.DateTimeFormat('en-CA', optionsDate).formatToParts(now);
-            const y = parts.find(p => p.type === 'year').value;
-            const m = parts.find(p => p.type === 'month').value;
-            const d = parts.find(p => p.type === 'day').value;
-            const todayStr = `${y}-${m}-${d}`;
-            
-            const currentHM = currentWitaTime.substring(0, 5); 
-            const currentSeconds = parseInt(currentWitaTime.substring(6, 8));
-            
-            const [curH, curM] = currentHM.split(':').map(Number);
-            const currentTotalMins = curH * 60 + curM;
-
-            let needRender = false;
-
-            notes.forEach(note => {
-                let shouldRing = false;
-                
-                // AUTO-DELETE Logic for One-Time Events
-                if (!note.isLoop) {
-                    let isExpired = false;
-                    if (note.targetDate < todayStr) isExpired = true;
-                    else if (note.targetDate === todayStr) {
-                         const [targetH, targetM] = note.time.split(':').map(Number);
-                         // Expire if current time is > target time + 1 minute (tolerance)
-                         if (currentTotalMins > (targetH * 60 + targetM + 1)) {
-                             isExpired = true;
-                         }
-                    }
-                    
-                    if (isExpired && !note.isRinging && !note.isDeleting) {
-                        note.isDeleting = true; 
-                        deleteFromCloud(NOCO_CONFIG.tableJadwal, note.id).then(() => {
-                             notes = notes.filter(n => n.id !== note.id);
-                             renderNotes();
-                        }).catch(() => { note.isDeleting = false; }); 
-                        return; 
-                    }
-                }
-
-                if (todayStr < note.targetDate) return;
-
-                const [targetH, targetM] = note.time.split(':').map(Number);
-                const targetTotalMins = targetH * 60 + targetM;
-                
-                const startDate = new Date(note.targetDate);
-                const currDate = new Date(todayStr);
-                const diffTime = currDate - startDate;
-                const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)); 
-                const totalElapsedMinutes = (diffDays * 1440) + (currentTotalMins - targetTotalMins);
-
-                if (!note.isLoop) {
-                    if (note.targetDate === todayStr && note.time === currentHM) {
-                        shouldRing = true;
-                    }
-                } else {
-                    if (note.repeatType === 'interval') {
-                        if (totalElapsedMinutes >= 0 && totalElapsedMinutes % note.repeatInterval === 0) {
-                             shouldRing = true;
-                        }
-                    } 
-                    else if (note.repeatType === 'daily') {
-                        if (note.time === currentHM) shouldRing = true;
-                    }
-                    else if (note.repeatType === 'weekly') {
-                        const startDay = new Date(note.targetDate).getDay(); 
-                        const currentDay = now.getDay(); 
-                        if (currentDay === startDay && note.time === currentHM) shouldRing = true;
-                    }
-                    else if (note.repeatType === 'monthly') {
-                        const targetDateNum = parseInt(note.targetDate.split('-')[2]);
-                        const currentDateNum = parseInt(d);
-                        if (currentDateNum === targetDateNum && note.time === currentHM) shouldRing = true;
-                    }
-                }
-
-                if (shouldRing) {
-                    if ((currentSeconds === 0 || currentSeconds === 2 || currentSeconds === 4 || currentSeconds === 6)) {
-                         playTing(); 
-                         if (!note.isRinging) {
-                             note.isRinging = true;
-                             needRender = true;
-                             showToast("ALARM: " + note.text, "success");
-                             sendTelegramAlert(note, currentHM);
-                             
-                             if (!note.isLoop) {
-                                 note.isDeleting = true;
-                                 deleteFromCloud(NOCO_CONFIG.tableJadwal, note.id).then(() => {
-                                     notes = notes.filter(n => n.id !== note.id);
-                                     renderNotes();
-                                 });
-                             }
-                         }
-                    } else if (currentSeconds > 6) {
-                        if (note.isRinging) { note.isRinging = false; needRender = true; }
-                    }
-                } else {
-                    if (note.isRinging) { note.isRinging = false; needRender = true; }
-                }
-            });
-            if (needRender) renderNotes();
-        }
-
-        // --- AUDIO & VOLUME ---
-        let audioCtx;
-        let isAudioEnabled = false;
-        let masterVolume = 0.1;
-        let volumeTimeout;
-
-        function updateVolume(val) {
-            masterVolume = val / 100;
-            document.getElementById('volume-display').innerText = val + "%";
-            if(isAudioEnabled) playTing(); 
-            clearTimeout(volumeTimeout);
-            volumeTimeout = setTimeout(() => { saveVolumeToCloud(val); }, 1000);
-        }
-        
-        async function saveVolumeToCloud(val) {
-            if(!volumeRecordId) return;
-            try {
-                const volNum = parseInt(val);
-                await patchToCloud(NOCO_CONFIG.tableVolume, { Id: volumeRecordId, vol: volNum });
-            } catch(e) { }
-        }
-
-        function toggleAudio() {
-            const btn = document.getElementById("audio-btn");
-            const icon = document.getElementById("audio-icon");
-            const text = document.getElementById("audio-text");
-            const volWrapper = document.getElementById("volume-wrapper");
-            if (isAudioEnabled) {
-                isAudioEnabled = false;
-                btn.classList.replace("bg-white/15", "bg-white/10");
-                icon.innerText = "🔇"; text.innerText = "Klik untuk aktifkan";
-                volWrapper.classList.add("opacity-60", "pointer-events-none");
-            } else {
-                try {
-                    if (!audioCtx) audioCtx = new(window.AudioContext || window.webkitAudioContext)();
-                    if (audioCtx.state === "suspended") audioCtx.resume();
-                    isAudioEnabled = true;
-                    btn.classList.replace("bg-white/10", "bg-white/15");
-                    icon.innerText = "🔊"; text.innerText = "Suara Aktif";
-                    volWrapper.classList.remove("opacity-60", "pointer-events-none");
-                    playTing(); 
-                } catch (e) {}
-            }
-        }
-
-        function playTing() {
-            if (!isAudioEnabled || !audioCtx) return;
-            try {
-                const t = audioCtx.currentTime;
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
-                osc.type = "sine"; osc.frequency.setValueAtTime(500, t); osc.frequency.exponentialRampToValueAtTime(500, t + 0.1);
-                gain.gain.setValueAtTime(0, t); gain.gain.linearRampToValueAtTime(masterVolume, t + 0.05); gain.gain.exponentialRampToValueAtTime(0.001, t + 2.0);
-                osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(t + 2.0);
-            } catch (e) {}
-        }
-        
-        // --- OTHER UTILS ---
-        function toggleIntervalInput() {
-            const type = document.getElementById('repeat-type').value;
-            const input = document.getElementById('interval-input');
-            if (type === 'interval') { input.classList.remove('hidden'); input.focus(); } 
-            else { input.classList.add('hidden'); }
-        }
-        function toggleLoopOptions() {
-            const isLoop = document.getElementById('loop-check').checked;
-            const optionsDiv = document.getElementById('loop-options');
-            const hint = document.getElementById('loop-hint');
-            if (isLoop) {
-                optionsDiv.classList.remove('hidden');
-                hint.classList.add('hidden');
-                document.getElementById('repeat-type').value = 'daily'; 
-                toggleIntervalInput();
-            } else {
-                optionsDiv.classList.add('hidden');
-                hint.classList.remove('hidden');
-            }
-        }
-        function closeModal() { document.getElementById('modal-overlay').classList.add('hidden'); pendingDeleteId = null; }
-        function openTelegramModal() { document.getElementById('telegram-modal').classList.remove('hidden'); }
-        function closeTelegramModal() { document.getElementById('telegram-modal').classList.add('hidden'); }
-        
-        function resetForm() {
-            document.getElementById('note-input').value = '';
-            document.getElementById('msg-input').value = '';
-            initTimeSelects();
-            document.getElementById('loop-check').checked = false;
-            toggleLoopOptions();
-            document.getElementById('repeat-type').value = 'interval';
-            document.getElementById('interval-input').value = '';
-            document.getElementById('admin-pass').value = '';
-            document.getElementById('add-btn').innerHTML = "<span>TAMBAH</span>";
-            document.getElementById('add-btn').classList.remove('bg-orange-500');
-            document.getElementById('cancel-btn').classList.add('hidden');
-            editModeId = null;
-        }
-
-        function getRepeatLabel(note) {
-            if (note.repeatType === 'interval') return `Tiap ${note.repeatInterval} Menit`;
-            if (note.repeatType === 'daily') return 'Setiap Hari';
-            if (note.repeatType === 'weekly') return 'Mingguan';
-            if (note.repeatType === 'monthly') return 'Bulanan';
-            return 'Berulang';
-        }
-
-        // --- UPDATE CLOCK FUNC MUST BE DEFINED ---
-        function updateClock() {
-            try {
-                const now = new Date();
-                
-                // 1. Tampilan Jam & Tanggal Header
-                const optionsTime = { timeZone: 'Asia/Makassar', hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' };
-                const optionsDate = { timeZone: 'Asia/Makassar', weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-                const timeString = new Intl.DateTimeFormat('id-ID', optionsTime).format(now).replace(/\./g, ':');
-                const dateString = new Intl.DateTimeFormat('id-ID', optionsDate).format(now);
-                
-                document.getElementById('clock-display').innerText = timeString;
-                document.getElementById('date-display').innerText = dateString;
-
-                // 2. Auto-Update Input Tanggal saat Ganti Hari (Midnight Update)
-                const fmtISO = new Intl.DateTimeFormat('en-CA', { 
-                    timeZone: 'Asia/Makassar', year: 'numeric', month: '2-digit', day: '2-digit' 
-                });
-                const parts = fmtISO.formatToParts(now);
-                const y = parts.find(p => p.type === 'year').value;
-                const m = parts.find(p => p.type === 'month').value;
-                const d = parts.find(p => p.type === 'day').value;
-                const currentWitaISO = `${y}-${m}-${d}`;
-
-                // Jika tanggal berubah (atau pertama kali load), update input tanggal
-                // Pengecekan !editModeId agar tidak mengubah tanggal saat user sedang mengedit jadwal lama
-                if (currentWitaISO !== lastDateWita) {
-                    lastDateWita = currentWitaISO;
-                    const dateInput = document.getElementById('date-input');
-                    if(dateInput && !editModeId) {
-                        dateInput.value = currentWitaISO;
-                        console.log("Date input auto-updated to:", currentWitaISO);
-                    }
-                }
-
-                checkAlarms(timeString);
-            } catch (e) {}
-        }
-
-        // --- INIT ---
-        window.addEventListener('DOMContentLoaded', () => {
-            initTimeSelects();
-            initData();
-            setInterval(updateClock, 1000);
-            updateClock();
+          listEl.appendChild(el);
         });
+      }
 
+      function editNote(id) {
+        const passInput = document.getElementById("admin-pass");
+        if (passInput.value !== ADMIN_PASS) {
+          showToast("Password Salah! Isi di kolom bawah.", "error");
+          passInput.focus();
+          return;
+        }
+        const note = notes.find((n) => n.id === id);
+        if (note) {
+          document.getElementById("note-input").value = note.text;
+          document.getElementById("msg-input").value = note.message || "";
+          document.getElementById("date-input").value = note.targetDate;
+
+          const [h, m] = note.time.split(":");
+          if (h && m) {
+            document.getElementById("hour-input").value = h;
+            document.getElementById("minute-input").value = m;
+          }
+
+          document.getElementById("loop-check").checked = note.isLoop;
+          toggleLoopOptions();
+
+          if (note.isLoop) {
+            document.getElementById("repeat-type").value =
+              note.repeatType || "interval";
+            if (note.repeatType === "interval") {
+              document.getElementById("interval-input").value =
+                note.repeatInterval;
+            }
+            toggleIntervalInput();
+          }
+
+          document.getElementById("add-btn").innerHTML = "<span>SIMPAN</span>";
+          document.getElementById("add-btn").classList.add("bg-orange-500");
+          document.getElementById("cancel-btn").classList.remove("hidden");
+          editModeId = id;
+          window.scrollTo({ top: 0, behavior: "smooth" });
+          showToast("Mode Edit Aktif");
+        }
+      }
+
+      // --- 5. LOGIKA ALARM (FINAL REFINED) ---
+      function checkAlarms(currentWitaTime) {
+        const now = new Date();
+        const optionsDate = {
+          timeZone: "Asia/Makassar",
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+        };
+        const parts = new Intl.DateTimeFormat(
+          "en-CA",
+          optionsDate,
+        ).formatToParts(now);
+        const y = parts.find((p) => p.type === "year").value;
+        const m = parts.find((p) => p.type === "month").value;
+        const d = parts.find((p) => p.type === "day").value;
+        const todayStr = `${y}-${m}-${d}`;
+
+        const currentHM = currentWitaTime.substring(0, 5);
+        const currentSeconds = parseInt(currentWitaTime.substring(6, 8));
+
+        const [curH, curM] = currentHM.split(":").map(Number);
+        const currentTotalMins = curH * 60 + curM;
+
+        let needRender = false;
+
+        notes.forEach((note) => {
+          let shouldRing = false;
+
+          // AUTO-DELETE Logic for One-Time Events
+          // STRICT CHECK: Hanya jika isLoop FALSE
+          if (note.isLoop === false) {
+            let isExpired = false;
+            if (note.targetDate < todayStr) {
+              isExpired = true;
+            } else if (note.targetDate === todayStr) {
+              const [targetH, targetM] = note.time.split(":").map(Number);
+              // Expire if current time is > target time + 1 minute (tolerance)
+              if (currentTotalMins > targetH * 60 + targetM + 1) {
+                isExpired = true;
+              }
+            }
+
+            // Only delete if expired AND NOT currently ringing (to avoid deleting while alerting)
+            // Added protection: !note.isRinging
+            if (isExpired && !note.isRinging && !note.isDeleting) {
+              note.isDeleting = true;
+              console.log("Cleanup expired note (Safe Check):", note.text);
+              deleteFromCloud(NOCO_CONFIG.tableJadwal, note.id)
+                .then(() => {
+                  notes = notes.filter((n) => n.id !== note.id);
+                  renderNotes();
+                })
+                .catch(() => {
+                  note.isDeleting = false;
+                });
+              return;
+            }
+          }
+
+          // Jika belum sampai tanggal mulai, jangan bunyikan apapun
+          if (todayStr < note.targetDate) return;
+
+          const [targetH, targetM] = note.time.split(":").map(Number);
+          const targetTotalMins = targetH * 60 + targetM;
+
+          const startDate = new Date(note.targetDate);
+          const currDate = new Date(todayStr);
+          const diffTime = currDate - startDate;
+          const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+          const totalElapsedMinutes =
+            diffDays * 1440 + (currentTotalMins - targetTotalMins);
+
+          if (!note.isLoop) {
+            if (note.targetDate === todayStr && note.time === currentHM) {
+              shouldRing = true;
+            }
+          } else {
+            // Loop Logic
+            if (note.repeatType === "interval") {
+              if (
+                totalElapsedMinutes >= 0 &&
+                totalElapsedMinutes % note.repeatInterval === 0
+              ) {
+                shouldRing = true;
+              }
+            } else if (note.repeatType === "daily") {
+              if (note.time === currentHM) shouldRing = true;
+            } else if (note.repeatType === "weekly") {
+              const startDay = new Date(note.targetDate).getDay();
+              const currentDay = now.getDay();
+              if (currentDay === startDay && note.time === currentHM)
+                shouldRing = true;
+            } else if (note.repeatType === "monthly") {
+              const targetDateNum = parseInt(note.targetDate.split("-")[2]);
+              const currentDateNum = parseInt(d);
+              if (currentDateNum === targetDateNum && note.time === currentHM)
+                shouldRing = true;
+            }
+          }
+
+          if (shouldRing) {
+            if (
+              currentSeconds === 0 ||
+              currentSeconds === 2 ||
+              currentSeconds === 4 ||
+              currentSeconds === 6
+            ) {
+              playTing();
+              if (!note.isRinging) {
+                note.isRinging = true;
+                needRender = true;
+                showToast("ALARM: " + note.text, "success");
+                sendTelegramAlert(note, currentHM);
+
+                // Hapus HANYA jika bukan Loop
+                if (note.isLoop === false) {
+                  console.log("Auto Deleting (Rung)...", note.id);
+                  note.isDeleting = true;
+                  deleteFromCloud(NOCO_CONFIG.tableJadwal, note.id).then(() => {
+                    notes = notes.filter((n) => n.id !== note.id);
+                    renderNotes();
+                  });
+                }
+              }
+            } else if (currentSeconds > 6) {
+              if (note.isRinging) {
+                note.isRinging = false;
+                needRender = true;
+              }
+            }
+          } else {
+            if (note.isRinging) {
+              note.isRinging = false;
+              needRender = true;
+            }
+          }
+        });
+        if (needRender) renderNotes();
+      }
+
+      // --- AUDIO & VOLUME ---
+      let audioCtx;
+      let isAudioEnabled = false;
+      let masterVolume = 0.1;
+      let volumeTimeout;
+
+      function updateVolume(val) {
+        masterVolume = val / 100;
+        document.getElementById("volume-display").innerText = val + "%";
+        if (isAudioEnabled) playTing();
+        clearTimeout(volumeTimeout);
+        volumeTimeout = setTimeout(() => {
+          saveVolumeToCloud(val);
+        }, 1000);
+      }
+
+      async function saveVolumeToCloud(val) {
+        if (!volumeRecordId) return;
+        try {
+          const volNum = parseInt(val);
+          await patchToCloud(NOCO_CONFIG.tableVolume, {
+            Id: volumeRecordId,
+            vol: volNum,
+          });
+        } catch (e) {}
+      }
+
+      function toggleAudio() {
+        const btn = document.getElementById("audio-btn");
+        const icon = document.getElementById("audio-icon");
+        const text = document.getElementById("audio-text");
+        const volWrapper = document.getElementById("volume-wrapper");
+        if (isAudioEnabled) {
+          isAudioEnabled = false;
+          btn.classList.replace("bg-white/15", "bg-white/10");
+          icon.innerText = "🔇";
+          text.innerText = "Klik untuk aktifkan";
+          volWrapper.classList.add("opacity-60", "pointer-events-none");
+        } else {
+          try {
+            if (!audioCtx)
+              audioCtx = new (
+                window.AudioContext || window.webkitAudioContext
+              )();
+            if (audioCtx.state === "suspended") audioCtx.resume();
+            isAudioEnabled = true;
+            btn.classList.replace("bg-white/10", "bg-white/15");
+            icon.innerText = "🔊";
+            text.innerText = "Suara Aktif";
+            volWrapper.classList.remove("opacity-60", "pointer-events-none");
+            playTing();
+          } catch (e) {}
+        }
+      }
+
+      function playTing() {
+        if (!isAudioEnabled || !audioCtx) return;
+        try {
+          const t = audioCtx.currentTime;
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = "sine";
+          osc.frequency.setValueAtTime(500, t);
+          osc.frequency.exponentialRampToValueAtTime(500, t + 0.1);
+          gain.gain.setValueAtTime(0, t);
+          gain.gain.linearRampToValueAtTime(masterVolume, t + 0.05);
+          gain.gain.exponentialRampToValueAtTime(0.001, t + 2.0);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start();
+          osc.stop(t + 2.0);
+        } catch (e) {}
+      }
+
+      // --- OTHER UTILS ---
+      function toggleIntervalInput() {
+        const type = document.getElementById("repeat-type").value;
+        const input = document.getElementById("interval-input");
+        if (type === "interval") {
+          input.classList.remove("hidden");
+          input.focus();
+        } else {
+          input.classList.add("hidden");
+        }
+      }
+      function toggleLoopOptions() {
+        const isLoop = document.getElementById("loop-check").checked;
+        const optionsDiv = document.getElementById("loop-options");
+        const hint = document.getElementById("loop-hint");
+        if (isLoop) {
+          optionsDiv.classList.remove("hidden");
+          hint.classList.add("hidden");
+          document.getElementById("repeat-type").value = "daily";
+          toggleIntervalInput();
+        } else {
+          optionsDiv.classList.add("hidden");
+          hint.classList.remove("hidden");
+        }
+      }
+      function closeModal() {
+        document.getElementById("modal-overlay").classList.add("hidden");
+        pendingDeleteId = null;
+      }
+      function openTelegramModal() {
+        document.getElementById("telegram-modal").classList.remove("hidden");
+      }
+      function closeTelegramModal() {
+        document.getElementById("telegram-modal").classList.add("hidden");
+      }
+
+      function resetForm() {
+        document.getElementById("note-input").value = "";
+        document.getElementById("msg-input").value = "";
+        initTimeSelects();
+        document.getElementById("loop-check").checked = false;
+        toggleLoopOptions();
+        document.getElementById("repeat-type").value = "interval";
+        document.getElementById("interval-input").value = "";
+        document.getElementById("admin-pass").value = "";
+        document.getElementById("add-btn").innerHTML = "<span>TAMBAH</span>";
+        document.getElementById("add-btn").classList.remove("bg-orange-500");
+        document.getElementById("cancel-btn").classList.add("hidden");
+        editModeId = null;
+      }
+
+      function getRepeatLabel(note) {
+        if (note.repeatType === "interval")
+          return `Tiap ${note.repeatInterval} Menit`;
+        if (note.repeatType === "daily") return "Setiap Hari";
+        if (note.repeatType === "weekly") return "Mingguan";
+        if (note.repeatType === "monthly") return "Bulanan";
+        return "Berulang";
+      }
+
+      // --- UPDATE CLOCK FUNC MUST BE DEFINED ---
+      function updateClock() {
+        try {
+          const now = new Date();
+
+          // 1. Tampilan Jam & Tanggal Header
+          const optionsTime = {
+            timeZone: "Asia/Makassar",
+            hour12: false,
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+          };
+          const optionsDate = {
+            timeZone: "Asia/Makassar",
+            weekday: "long",
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+          };
+          const timeString = new Intl.DateTimeFormat("id-ID", optionsTime)
+            .format(now)
+            .replace(/\./g, ":");
+          const dateString = new Intl.DateTimeFormat(
+            "id-ID",
+            optionsDate,
+          ).format(now);
+
+          document.getElementById("clock-display").innerText = timeString;
+          document.getElementById("date-display").innerText = dateString;
+
+          // 2. Auto-Update Input Tanggal saat Ganti Hari (Midnight Update)
+          const fmtISO = new Intl.DateTimeFormat("en-CA", {
+            timeZone: "Asia/Makassar",
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+          });
+          const parts = fmtISO.formatToParts(now);
+          const y = parts.find((p) => p.type === "year").value;
+          const m = parts.find((p) => p.type === "month").value;
+          const d = parts.find((p) => p.type === "day").value;
+          const currentWitaISO = `${y}-${m}-${d}`;
+
+          // Jika tanggal berubah (atau pertama kali load), update input tanggal
+          // Pengecekan !editModeId agar tidak mengubah tanggal saat user sedang mengedit jadwal lama
+          if (currentWitaISO !== lastDateWita) {
+            lastDateWita = currentWitaISO;
+            const dateInput = document.getElementById("date-input");
+            if (dateInput && !editModeId) {
+              dateInput.value = currentWitaISO;
+              console.log("Date input auto-updated to:", currentWitaISO);
+            }
+          }
+
+          checkAlarms(timeString);
+        } catch (e) {}
+      }
+
+      // --- INIT ---
+      window.addEventListener("DOMContentLoaded", () => {
+        initTimeSelects();
+        initData();
+        setInterval(updateClock, 1000);
+        updateClock();
+      });
     </script>
-</body>
+  </body>
 </html>
