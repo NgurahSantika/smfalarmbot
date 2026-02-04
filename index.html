@@ -208,10 +208,10 @@
 
                 <!-- Baris 4: Opsi Perulangan -->
                 <div class="flex items-center gap-3 bg-black/20 p-3 rounded-lg border border-gray-700">
-                    <div class="flex items-center gap-2 cursor-pointer" onclick="document.getElementById('loop-check').click()">
+                    <label class="flex items-center gap-2 cursor-pointer select-none">
                         <input type="checkbox" id="loop-check" class="custom-checkbox text-cyan-500" onchange="toggleLoopOptions()">
                         <span class="text-sm font-semibold text-gray-300">Ulangi Jadwal?</span>
-                    </div>
+                    </label>
 
                     <div id="loop-options" class="flex-1 flex gap-2 hidden">
                         <select id="repeat-type" onchange="toggleIntervalInput()" class="flex-1 bg-black/40 border border-gray-600 rounded-lg px-2 py-2 text-white text-xs md:text-sm focus:outline-none focus:border-cyan-500">
@@ -520,6 +520,7 @@
                         text: rec.Title || "", 
                         message: rec.Notes || "",
                         time: rawTime, 
+                        // MAPPING
                         targetDate: rec.Date || "", 
                         isLoop: rec.Loop === true || rec.Loop === 1, 
                         repeatType: rec.RepeatType || "interval", 
@@ -620,7 +621,16 @@
             }
         }
 
-        // --- 4. RENDER & UI (ADDED BACK) ---
+        // --- 4. RENDER & UI ---
+        
+        // Manual Date Formatter (User Friendly: "10 Februari 2026")
+        function formatDateFriendly(isoDateStr) {
+            if (!isoDateStr) return "-";
+            const [y, m, d] = isoDateStr.split('-');
+            const dateObj = new Date(y, m - 1, d);
+            return new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }).format(dateObj);
+        }
+
         function renderNotes() {
             const listEl = document.getElementById('notes-list');
             const countEl = document.getElementById('total-notes');
@@ -639,15 +649,14 @@
                     ? `<span class="text-xs text-yellow-400 font-semibold mt-1">🔄 ${getRepeatLabel(note)}</span>`
                     : `<span class="text-xs text-blue-400 font-semibold mt-1">⚡ Sekali Jalan</span>`;
 
-                // Format Date for display
-                const dateObj = new Date(note.targetDate);
-                const dateStr = dateObj.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: '2-digit' });
+                // Use the safe formatter
+                const dateStr = formatDateFriendly(note.targetDate);
 
                 el.innerHTML = `
                     <div class="flex items-center gap-4 overflow-hidden">
                         <div class="flex flex-col items-center justify-center bg-black/40 rounded-lg p-2 min-w-[80px]">
                             <span class="text-2xl font-bold font-mono text-cyan-400">${note.time}</span>
-                            <span class="text-[10px] text-gray-400 uppercase">${dateStr}</span>
+                            <span class="text-[10px] text-gray-400 uppercase text-center leading-tight">${dateStr}</span>
                         </div>
                         <div class="flex flex-col min-w-0">
                             <span class="text-lg font-medium truncate ${note.isRinging ? 'text-green-400 font-bold' : 'text-white'}">${note.text}</span>
@@ -665,6 +674,7 @@
         }
 
         async function requestDelete(id) {
+            // Remove modal usage for deleting individual items, use main password input logic
             const passInput = document.getElementById('admin-pass');
             if (passInput.value !== ADMIN_PASS) {
                 showToast("Password Salah! Isi di kolom bawah.", "error");
@@ -746,22 +756,28 @@
             notes.forEach(note => {
                 let shouldRing = false;
                 
-                // AUTO-DELETE FOR EXPIRED ONE-TIME NOTES
+                // AUTO-DELETE Logic: Only if definitely past
+                // We add a safety buffer of 1 minute so it doesn't delete "instantly"
                 if (!note.isLoop) {
                     let isExpired = false;
-                    // Check if date is in the past
                     if (note.targetDate < todayStr) isExpired = true;
-                    // Check if date is today but time is passed
-                    else if (note.targetDate === todayStr && note.time < currentHM) isExpired = true;
+                    // Strict check: if same day, must be at least 1 minute past
+                    else if (note.targetDate === todayStr) {
+                         const [targetH, targetM] = note.time.split(':').map(Number);
+                         // Expire if current time is > target time + 1 minute
+                         if (currentTotalMins > (targetH * 60 + targetM + 1)) {
+                             isExpired = true;
+                         }
+                    }
                     
                     if (isExpired && !note.isRinging && !note.isDeleting) {
-                        note.isDeleting = true; // Flag to prevent multiple calls
+                        note.isDeleting = true; 
                         console.log("Cleanup expired note:", note.text);
                         deleteFromCloud(NOCO_CONFIG.tableJadwal, note.id).then(() => {
                              notes = notes.filter(n => n.id !== note.id);
                              renderNotes();
-                        }).catch(() => { note.isDeleting = false; }); // Reset flag on error
-                        return; // Skip alerting logic
+                        }).catch(() => { note.isDeleting = false; }); 
+                        return; 
                     }
                 }
 
