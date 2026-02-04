@@ -215,10 +215,10 @@
 
                     <div id="loop-options" class="flex-1 flex gap-2 hidden">
                         <select id="repeat-type" onchange="toggleIntervalInput()" class="flex-1 bg-black/40 border border-gray-600 rounded-lg px-2 py-2 text-white text-xs md:text-sm focus:outline-none focus:border-cyan-500">
-                            <option value="interval">Tiap X Menit (Tipe A)</option>
-                            <option value="daily">Setiap Hari (Tipe B)</option>
-                            <option value="weekly">Setiap Minggu (Tipe B)</option>
-                            <option value="monthly">Setiap Bulan (Tipe B)</option>
+                            <option value="interval">Tiap X Menit</option>
+                            <option value="daily">Setiap Hari</option>
+                            <option value="weekly">Setiap Minggu</option>
+                            <option value="monthly">Setiap Bulan</option>
                         </select>
                         
                         <input type="number" id="interval-input" min="1" max="1440" placeholder="Menit" 
@@ -514,20 +514,24 @@
                 notes = jadwalRecords.map(rec => {
                     let rawTime = rec.Time || "00:00";
                     if(rawTime.length > 5) rawTime = rawTime.substring(0, 5);
+                    
+                    // FORCE BOOLEAN FROM DB (1/true => true)
+                    let loopVal = false;
+                    if(rec.Loop === true || rec.Loop === 1 || rec.Loop === "true") loopVal = true;
 
                     return {
                         id: rec.Id, 
                         text: rec.Title || "", 
                         message: rec.Notes || "",
                         time: rawTime, 
-                        // MAPPING
                         targetDate: rec.Date || "", 
-                        isLoop: rec.Loop === true || rec.Loop === 1, 
+                        isLoop: loopVal, 
                         repeatType: rec.RepeatType || "interval", 
                         repeatInterval: rec.RepeatInterval ? parseInt(rec.RepeatInterval) : 30, 
                         isRinging: false
                     };
                 });
+                // Sort by Date then Time
                 notes.sort((a, b) => {
                     if (a.targetDate !== b.targetDate) return a.targetDate.localeCompare(b.targetDate);
                     return a.time.localeCompare(b.time);
@@ -537,6 +541,56 @@
             } else {
                 notes = [];
                 renderNotes();
+            }
+        }
+
+        function updateChatIdListUI() {
+            const listContainer = document.getElementById('chat-id-list');
+            const countBadge = document.getElementById('chat-count');
+            
+            countBadge.innerText = telegramChatIds.length;
+            listContainer.innerHTML = '';
+
+            if (telegramChatIds.length === 0) {
+                listContainer.innerHTML = '<div class="text-center text-gray-500 text-xs italic py-2">Belum ada Chat ID terdaftar.</div>';
+                return;
+            }
+
+            telegramChatIds.forEach(item => {
+                const div = document.createElement('div');
+                div.className = "flex justify-between items-center bg-white/5 px-2 py-1 rounded";
+                div.innerHTML = `<span>${maskChatId(item.chatId)}</span><span class="text-[10px] text-green-400">Aktif</span>`;
+                listContainer.appendChild(div);
+            });
+        }
+
+        async function saveTelegramSettings() {
+            const chatId = document.getElementById('telegram-chat-id').value.trim();
+            const pass = document.getElementById('tele-pass').value;
+
+            if (!chatId) return showToast("Chat ID Kosong!", "error");
+            if (pass !== ADMIN_PASS) return showToast("Password Salah!", "error");
+
+            const btn = document.querySelector("#telegram-modal button:last-child");
+            const originalText = btn.innerText;
+            btn.innerText = "Menyimpan...";
+            btn.disabled = true;
+
+            try {
+                const res = await postToCloud(NOCO_CONFIG.tableChat, { TelegramID: chatId });
+                telegramChatIds.push({
+                    recordId: res.Id,
+                    chatId: chatId
+                });
+                updateChatIdListUI();
+                document.getElementById('telegram-chat-id').value = '';
+                document.getElementById('tele-pass').value = '';
+                showToast("Chat ID Berhasil Ditambahkan", "success");
+            } catch (e) {
+                showToast("Gagal simpan: " + e.message, "error");
+            } finally {
+                btn.innerText = originalText;
+                btn.disabled = false;
             }
         }
 
@@ -574,12 +628,15 @@
 
             const timePayload = time + ":00";
 
+            // FORCE Boolean to 1/0 for NocoDB compatibility
+            const loopVal = isLoop ? 1 : 0;
+
             const payload = {
                 Title: text,
                 Notes: message,
                 Time: timePayload,
                 Date: dateVal,       
-                Loop: isLoop,        
+                Loop: loopVal,        
                 RepeatType: isLoop ? repeatType : null,
                 RepeatInterval: isLoop ? Number(interval) : null
             };
@@ -621,9 +678,29 @@
             }
         }
 
+        async function requestDelete(id) {
+            const passInput = document.getElementById('admin-pass');
+            if (passInput.value !== ADMIN_PASS) {
+                showToast("Password Salah! Isi di kolom bawah.", "error");
+                passInput.focus();
+                passInput.classList.add('border-red-500', 'animate-pulse');
+                setTimeout(() => passInput.classList.remove('animate-pulse'), 1000);
+                return;
+            }
+
+            if(confirm("Yakin ingin menghapus jadwal ini?")) {
+                try {
+                    await deleteFromCloud(NOCO_CONFIG.tableJadwal, id);
+                    notes = notes.filter(n => n.id !== id);
+                    renderNotes();
+                    showToast("Dihapus dari Cloud", "success");
+                } catch(e) {
+                    showToast("Gagal hapus: " + e.message, "error");
+                }
+            }
+        }
+
         // --- 4. RENDER & UI ---
-        
-        // Manual Date Formatter (User Friendly: "10 Februari 2026")
         function formatDateFriendly(isoDateStr) {
             if (!isoDateStr) return "-";
             const [y, m, d] = isoDateStr.split('-');
@@ -649,7 +726,6 @@
                     ? `<span class="text-xs text-yellow-400 font-semibold mt-1">🔄 ${getRepeatLabel(note)}</span>`
                     : `<span class="text-xs text-blue-400 font-semibold mt-1">⚡ Sekali Jalan</span>`;
 
-                // Use the safe formatter
                 const dateStr = formatDateFriendly(note.targetDate);
 
                 el.innerHTML = `
@@ -671,29 +747,6 @@
                 `;
                 listEl.appendChild(el);
             });
-        }
-
-        async function requestDelete(id) {
-            // Remove modal usage for deleting individual items, use main password input logic
-            const passInput = document.getElementById('admin-pass');
-            if (passInput.value !== ADMIN_PASS) {
-                showToast("Password Salah! Isi di kolom bawah.", "error");
-                passInput.focus();
-                passInput.classList.add('border-red-500', 'animate-pulse');
-                setTimeout(() => passInput.classList.remove('animate-pulse'), 1000);
-                return;
-            }
-
-            if(confirm("Yakin ingin menghapus jadwal ini?")) {
-                try {
-                    await deleteFromCloud(NOCO_CONFIG.tableJadwal, id);
-                    notes = notes.filter(n => n.id !== id);
-                    renderNotes();
-                    showToast("Dihapus dari Cloud", "success");
-                } catch(e) {
-                    showToast("Gagal hapus: " + e.message, "error");
-                }
-            }
         }
 
         function editNote(id) {
@@ -756,15 +809,13 @@
             notes.forEach(note => {
                 let shouldRing = false;
                 
-                // AUTO-DELETE Logic: Only if definitely past
-                // We add a safety buffer of 1 minute so it doesn't delete "instantly"
+                // AUTO-DELETE Logic
                 if (!note.isLoop) {
                     let isExpired = false;
                     if (note.targetDate < todayStr) isExpired = true;
-                    // Strict check: if same day, must be at least 1 minute past
                     else if (note.targetDate === todayStr) {
                          const [targetH, targetM] = note.time.split(':').map(Number);
-                         // Expire if current time is > target time + 1 minute
+                         // Expire if current time is > target time + 1 minute (tolerance)
                          if (currentTotalMins > (targetH * 60 + targetM + 1)) {
                              isExpired = true;
                          }
