@@ -6,27 +6,32 @@
     <title>WITA Clock & Daily Alarm (Cloud Sync)</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Font Digital -->
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <!-- Font Digital: Varela Round -->
+    <link href="https://fonts.googleapis.com/css2?family=Varela+Round&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
         body {
-            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+            /* Background Paling Belakang: Biru Dongker (Deep Navy Gradient) */
+            background: linear-gradient(135deg, #020c1b 0%, #0a192f 50%, #112240 100%);
             font-family: 'Inter', sans-serif;
             min-height: 100vh;
         }
         .clock-font {
-            font-family: 'Orbitron', sans-serif;
-            text-shadow: 0 0 20px rgba(56, 189, 248, 0.5);
+            font-family: 'Varela Round', sans-serif;
+            /* Glow effect Cyan yang kontras dengan background hitam */
+            text-shadow: 0 0 30px rgba(34, 211, 238, 0.7);
         }
         .glass-panel {
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            /* Background Panel: Hitam Transparan */
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(15px);
+            /* Border tipis putih transparan agar batas kotak terlihat */
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.8);
         }
         /* Custom Scrollbar */
         ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); }
-        ::-webkit-scrollbar-thumb { background: #4f46e5; border-radius: 4px; }
+        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.3); }
+        ::-webkit-scrollbar-thumb { background: #1e40af; border-radius: 4px; }
         
         .alarm-ring {
             animation: ring 0.5s ease-in-out infinite;
@@ -50,8 +55,8 @@
             border: 3px solid rgba(255,255,255,0.1);
             border-left-color: #3b82f6;
             border-radius: 50%;
-            width: 20px;
-            height: 20px;
+            width: 24px;
+            height: 24px;
             animation: spin 1s linear infinite;
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
@@ -63,19 +68,19 @@
         }
         input[type=range]::-webkit-slider-thumb {
             -webkit-appearance: none;
-            height: 16px;
-            width: 16px;
+            height: 18px;
+            width: 18px;
             border-radius: 50%;
-            background: #ffffff;
+            background: #22d3ee; /* Warna Cyan untuk Thumb */
             cursor: pointer;
-            margin-top: -6px; 
-            box-shadow: 0 0 5px rgba(0,0,0,0.5);
+            margin-top: -7px; 
+            box-shadow: 0 0 10px rgba(34, 211, 238, 0.5);
         }
         input[type=range]::-webkit-slider-runnable-track {
             width: 100%;
             height: 4px;
             cursor: pointer;
-            background: rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.2);
             border-radius: 2px;
         }
 
@@ -84,31 +89,32 @@
         input[type="date"]::-webkit-calendar-picker-indicator {
             filter: invert(1) brightness(100%);
             cursor: pointer;
+            opacity: 0.8;
         }
         
         /* Checkbox Styling */
         .custom-checkbox {
             appearance: none;
-            background-color: rgba(0,0,0,0.3);
+            background-color: rgba(255,255,255,0.1);
             margin: 0;
             font: inherit;
-            color: currentColor;
-            width: 1.15em;
-            height: 1.15em;
-            border: 1px solid currentColor;
-            border-radius: 0.15em;
+            color: #22d3ee;
+            width: 1.25em;
+            height: 1.25em;
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 0.25em;
             display: grid;
             place-content: center;
             cursor: pointer;
         }
         .custom-checkbox::before {
             content: "";
-            width: 0.65em;
-            height: 0.65em;
+            width: 0.75em;
+            height: 0.75em;
             transform: scale(0);
             transition: 120ms transform ease-in-out;
-            box-shadow: inset 1em 1em white;
-            background-color: white;
+            box-shadow: inset 1em 1em #22d3ee;
+            background-color: #22d3ee;
             transform-origin: center;
             clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
         }
@@ -117,89 +123,89 @@
         }
     </style>
 </head>
-<body class="text-white flex flex-col items-center p-2 md:p-4 relative overflow-x-hidden">
+<body class="text-white flex flex-col items-center p-3 md:p-6 relative overflow-x-hidden">
 
     <!-- Cloud Status Indicator -->
-    <div class="absolute top-4 left-4 z-40 flex items-center gap-2 px-3 py-1 bg-black/40 rounded-full text-xs border border-white/10" id="cloud-status">
-        <div class="w-2 h-2 rounded-full bg-gray-500" id="cloud-dot"></div>
-        <span id="cloud-text" class="text-gray-400">Connecting...</span>
+    <div class="absolute top-4 left-4 z-40 flex items-center gap-2 px-3 py-1.5 bg-black/60 rounded-full text-xs border border-white/10 shadow-sm" id="cloud-status">
+        <div class="w-2.5 h-2.5 rounded-full bg-gray-500" id="cloud-dot"></div>
+        <span id="cloud-text" class="text-gray-300 font-medium">Connecting...</span>
     </div>
 
     <!-- Tombol Telegram Floating -->
-    <button onclick="openTelegramModal()" class="fixed top-4 right-4 bg-blue-500 hover:bg-blue-400 text-white p-3 rounded-full shadow-lg transition transform hover:scale-110 z-50" title="Setup Telegram Bot">
+    <button onclick="openTelegramModal()" class="fixed top-4 right-4 bg-blue-600 hover:bg-blue-500 text-white p-3 rounded-full shadow-lg transition transform hover:scale-110 z-50 border border-white/10" title="Setup Telegram Bot">
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
     </button>
 
     <!-- Container Utama -->
-    <div class="w-full max-w-3xl flex flex-col items-center gap-4 md:gap-6 mt-2 md:mt-4 pb-24">
+    <div class="w-full max-w-3xl flex flex-col items-center gap-5 md:gap-7 mt-4 md:mt-6 pb-24">
         
         <!-- JAM DIGITAL (WITA) -->
-        <div class="glass-panel w-full rounded-2xl p-6 md:p-8 text-center shadow-2xl relative overflow-hidden group">
-            <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-cyan-500 to-blue-500"></div>
+        <div class="glass-panel w-full rounded-3xl p-6 md:p-10 text-center shadow-2xl relative overflow-hidden group">
+            <div class="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-cyan-400 to-blue-600"></div>
             
             <!-- Cloud Status Indicator (Mobile) -->
-            <div class="absolute top-3 left-3 md:top-4 md:left-4 z-10 flex items-center gap-2 px-2 md:px-3 py-1 bg-black/40 rounded-full text-[10px] md:text-xs border border-white/10 md:hidden" id="cloud-status-mobile">
+            <div class="absolute top-4 left-4 z-10 flex items-center gap-2 px-2.5 py-1 bg-black/60 rounded-full text-[10px] md:text-xs border border-white/20 md:hidden" id="cloud-status-mobile">
                 <div class="w-2 h-2 rounded-full bg-gray-500" id="cloud-dot-mobile"></div>
             </div>
 
-            <h2 class="text-cyan-400 tracking-[0.2em] text-xs md:text-base font-bold mb-2 opacity-80 mt-6 md:mt-0">WAKTU INDONESIA TENGAH (WITA)</h2>
+            <h2 class="text-cyan-400 tracking-[0.2em] text-xs md:text-base font-bold mb-3 opacity-90 mt-6 md:mt-0 drop-shadow-md">WAKTU INDONESIA TENGAH (WITA)</h2>
             
-            <div id="clock-display" class="clock-font text-5xl sm:text-6xl md:text-8xl font-bold text-white mb-2 tracking-wide">
+            <div id="clock-display" class="clock-font text-6xl sm:text-7xl md:text-9xl font-bold text-cyan-400 mb-3 tracking-wide drop-shadow-2xl">
                 00:00:00
             </div>
             
-            <div id="date-display" class="text-gray-300 text-sm md:text-xl font-light">
+            <div id="date-display" class="text-gray-300 text-base md:text-2xl font-light tracking-wide drop-shadow-sm">
                 Memuat Tanggal...
             </div>
             
             <!-- Kontrol Audio & Volume -->
-            <div class="mt-6 flex flex-col items-center gap-3">
-                <button id="audio-btn" onclick="toggleAudio()" class="px-6 py-2 rounded-full text-xs md:text-sm bg-white/10 hover:bg-white/20 transition flex items-center gap-2 border border-white/10 cursor-pointer z-10 relative shadow-lg">
+            <div class="mt-8 flex flex-col items-center gap-4">
+                <button id="audio-btn" onclick="toggleAudio()" class="px-8 py-2.5 rounded-full text-sm font-medium bg-white/5 hover:bg-white/10 transition flex items-center gap-2 border border-white/10 cursor-pointer z-10 relative shadow-lg active:scale-95">
                     <span id="audio-icon">🔇</span> <span id="audio-text">Klik untuk aktifkan suara alarm</span>
                 </button>
 
                 <!-- Slider Volume -->
-                <div id="volume-wrapper" class="flex items-center gap-3 bg-black/30 px-4 py-2 rounded-lg border border-white/5 opacity-50 pointer-events-none transition-all duration-300 w-full max-w-[250px] justify-center">
-                    <span class="text-xs text-gray-400">🔈</span>
+                <div id="volume-wrapper" class="flex items-center gap-3 bg-black/40 px-5 py-3 rounded-xl border border-white/5 opacity-60 pointer-events-none transition-all duration-300 w-full max-w-[280px] justify-center">
+                    <span class="text-sm text-gray-400">🔈</span>
                     <input type="range" id="volume-slider" min="0" max="100" value="10" oninput="updateVolume(this.value)" class="flex-1">
-                    <span id="volume-display" class="text-xs font-mono w-8 text-right text-cyan-400">10%</span>
+                    <span id="volume-display" class="text-sm font-mono w-10 text-right text-cyan-400 font-bold">10%</span>
                 </div>
             </div>
         </div>
 
         <!-- INPUT FORM -->
-        <div class="glass-panel w-full rounded-xl p-4 md:p-6 shadow-lg">
-            <h3 class="text-lg md:text-xl font-semibold mb-4 flex items-center gap-2">
+        <div class="glass-panel w-full rounded-2xl p-5 md:p-8 shadow-xl">
+            <h3 class="text-lg md:text-2xl font-bold mb-5 flex items-center gap-2 text-white/90">
                 📝 Tambah Jadwal & Alarm
             </h3>
             
-            <div class="flex flex-col gap-3">
+            <div class="flex flex-col gap-4">
                 <!-- Baris 1: Judul -->
                 <input type="text" id="note-input" placeholder="Judul Kegiatan (Contoh: Rapat Tim)" 
-                    class="w-full bg-black/30 border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:border-cyan-500 transition text-white placeholder-gray-500 font-bold text-sm md:text-base">
+                    class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3.5 focus:outline-none focus:border-cyan-500 focus:bg-white/10 transition text-white placeholder-gray-500 font-bold text-sm md:text-base">
                 
                 <!-- Baris 2: Pesan Tambahan (Isi) -->
                 <textarea id="msg-input" rows="2" placeholder="Isi Pesan Telegram (Opsional)" 
-                    class="w-full bg-black/30 border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:border-cyan-500 transition text-white placeholder-gray-500 text-sm resize-none"></textarea>
+                    class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3.5 focus:outline-none focus:border-cyan-500 focus:bg-white/10 transition text-white placeholder-gray-500 text-sm resize-none"></textarea>
 
                 <!-- Baris 3: Tanggal & Waktu -->
-                <div class="flex flex-col md:flex-row gap-3">
-                    <!-- TANGGAL (NEW) -->
+                <div class="flex flex-col md:flex-row gap-4">
+                    <!-- TANGGAL -->
                     <div class="flex-1">
-                        <label class="text-[10px] text-gray-400 uppercase font-bold ml-1">Mulai Tanggal</label>
+                        <label class="text-[11px] text-gray-400 uppercase font-bold ml-1 mb-1 block tracking-wider">Mulai Tanggal</label>
                         <input type="date" id="date-input" 
-                            class="w-full bg-black/30 border border-gray-600 rounded-lg px-3 py-3 focus:outline-none focus:border-cyan-500 transition text-white scheme-dark cursor-pointer h-[48px]">
+                            class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3.5 focus:outline-none focus:border-cyan-500 focus:bg-white/10 transition text-white scheme-dark cursor-pointer font-medium h-[52px]">
                     </div>
                     
                     <!-- JAM (Custom Selector) -->
                     <div class="flex-1">
-                        <label class="text-[10px] text-gray-400 uppercase font-bold ml-1">Jam (WITA)</label>
-                        <div class="flex gap-2 items-center justify-center bg-black/30 border border-gray-600 rounded-lg px-3 py-3 focus-within:border-cyan-500 transition h-[48px]">
-                            <select id="hour-input" class="bg-transparent text-white text-center font-bold text-lg outline-none appearance-none cursor-pointer w-12 hover:text-cyan-400 border-none p-0 focus:ring-0">
+                        <label class="text-[11px] text-gray-400 uppercase font-bold ml-1 mb-1 block tracking-wider">Jam (WITA)</label>
+                        <div class="flex gap-2 items-center justify-center bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus-within:border-cyan-500 focus-within:bg-white/10 transition h-[52px]">
+                            <select id="hour-input" class="bg-transparent text-white text-center font-bold text-xl outline-none appearance-none cursor-pointer w-14 hover:text-cyan-400 border-none p-0 focus:ring-0">
                                 <!-- JS will populate -->
                             </select>
-                            <span class="text-white font-bold">:</span>
-                            <select id="minute-input" class="bg-transparent text-white text-center font-bold text-lg outline-none appearance-none cursor-pointer w-12 hover:text-cyan-400 border-none p-0 focus:ring-0">
+                            <span class="text-white font-bold text-xl mb-1">:</span>
+                            <select id="minute-input" class="bg-transparent text-white text-center font-bold text-xl outline-none appearance-none cursor-pointer w-14 hover:text-cyan-400 border-none p-0 focus:ring-0">
                                 <!-- JS will populate -->
                             </select>
                         </div>
@@ -207,40 +213,41 @@
                 </div>
 
                 <!-- Baris 4: Opsi Perulangan -->
-                <div class="flex items-center gap-3 bg-black/20 p-3 rounded-lg border border-gray-700">
-                    <label class="flex items-center gap-2 cursor-pointer select-none">
-                        <input type="checkbox" id="loop-check" class="custom-checkbox text-cyan-500" onchange="toggleLoopOptions()">
-                        <span class="text-sm font-semibold text-gray-300">Ulangi Jadwal?</span>
+                <div class="flex flex-wrap items-center gap-4 bg-white/5 p-4 rounded-xl border border-white/10 hover:bg-white/10 transition">
+                    <label class="flex items-center gap-3 cursor-pointer select-none min-w-fit">
+                        <input type="checkbox" id="loop-check" class="custom-checkbox text-cyan-400" onchange="toggleLoopOptions()">
+                        <span class="text-sm md:text-base font-semibold text-gray-300">Ulangi Jadwal?</span>
                     </label>
 
-                    <div id="loop-options" class="flex-1 flex gap-2 hidden">
-                        <select id="repeat-type" onchange="toggleIntervalInput()" class="flex-1 bg-black/40 border border-gray-600 rounded-lg px-2 py-2 text-white text-xs md:text-sm focus:outline-none focus:border-cyan-500">
-                            <option value="interval">Tiap X Menit</option>
-                            <option value="daily">Setiap Hari</option>
-                            <option value="weekly">Setiap Minggu</option>
-                            <option value="monthly">Setiap Bulan</option>
+                    <div id="loop-options" class="flex-1 flex gap-3 hidden animate-fade-in w-full md:w-auto">
+                        <select id="repeat-type" onchange="toggleIntervalInput()" class="flex-1 bg-black/40 border border-white/20 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-cyan-500">
+                            <option value="interval">Tiap X Menit (Tipe A)</option>
+                            <option value="daily">Setiap Hari (Tipe B)</option>
+                            <option value="weekly">Setiap Minggu (Tipe B)</option>
+                            <option value="monthly">Setiap Bulan (Tipe B)</option>
                         </select>
                         
                         <input type="number" id="interval-input" min="1" max="1440" placeholder="Menit" 
-                            class="w-20 bg-black/40 border border-gray-600 rounded-lg px-2 py-2 text-white text-center text-xs md:text-sm focus:outline-none focus:border-cyan-500">
+                            class="w-24 bg-black/40 border border-white/20 rounded-lg px-2 py-2 text-white text-center text-sm focus:outline-none focus:border-cyan-500 font-bold">
                     </div>
+                    
+                    <p id="loop-hint" class="text-[11px] text-gray-500 italic w-full">
+                        *Jika tidak dicentang, jadwal otomatis dihapus setelah berbunyi.
+                    </p>
                 </div>
-                <p id="loop-hint" class="text-[10px] text-gray-500 italic ml-1">
-                    *Jika tidak dicentang, jadwal akan otomatis dihapus setelah berbunyi (Auto-Delete).
-                </p>
 
                 <!-- Baris 5: Password & Tombol -->
-                <div class="flex flex-col md:flex-row gap-3 mt-2 pt-2 border-t border-gray-700">
-                    <input type="password" id="admin-pass" placeholder="Password (Wajib)" 
-                        class="flex-1 bg-black/30 border border-red-900/50 rounded-lg px-4 py-3 focus:outline-none focus:border-red-500 transition text-white placeholder-red-300/50 text-sm md:text-base">
+                <div class="flex flex-col md:flex-row gap-4 mt-2 pt-4 border-t border-white/10">
+                    <input type="password" id="admin-pass" placeholder="Password (Wajib: wah12345)" 
+                        class="flex-1 bg-white/5 border border-red-500/20 rounded-xl px-4 py-3.5 focus:outline-none focus:border-red-500 focus:bg-white/10 transition text-white placeholder-red-400/30 text-sm md:text-base">
 
-                    <div class="flex gap-2 w-full md:w-auto">
+                    <div class="flex gap-3 w-full md:w-auto">
                         <button id="add-btn" onclick="addOrUpdateNote()" 
-                            class="flex-1 md:flex-none bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition transform hover:scale-105 active:scale-95 whitespace-nowrap flex items-center justify-center gap-2 w-full md:w-auto text-sm md:text-base">
+                            class="flex-1 md:flex-none bg-gradient-to-r from-cyan-600 to-blue-700 hover:from-cyan-500 hover:to-blue-600 text-white font-bold py-3.5 px-8 rounded-xl shadow-lg transition transform hover:scale-[1.02] active:scale-95 whitespace-nowrap flex items-center justify-center gap-2 w-full md:w-auto text-sm md:text-base border border-white/10">
                             <span>TAMBAH</span>
                         </button>
                         
-                        <button id="cancel-btn" onclick="resetForm()" class="hidden bg-gray-600 hover:bg-gray-500 text-white font-bold py-3 px-4 rounded-lg">
+                        <button id="cancel-btn" onclick="resetForm()" class="hidden bg-gray-700 hover:bg-gray-600 text-white font-bold py-3 px-5 rounded-xl border border-white/10">
                             ✕
                         </button>
                     </div>
@@ -250,63 +257,72 @@
 
         <!-- DAFTAR CATATAN -->
         <div class="w-full">
-            <div class="flex justify-between items-end mb-2 px-2">
-                <h3 class="text-gray-400 text-xs md:text-sm font-semibold uppercase tracking-wider">Daftar Pengingat</h3>
-                <span id="total-notes" class="text-[10px] md:text-xs bg-white/10 px-2 py-1 rounded text-gray-300">Loading...</span>
+            <div class="flex justify-between items-end mb-3 px-2">
+                <h3 class="text-gray-400 text-xs md:text-sm font-bold uppercase tracking-widest border-b-2 border-cyan-500/30 pb-1">Daftar Pengingat</h3>
+                <span id="total-notes" class="text-[10px] md:text-xs bg-white/5 px-3 py-1 rounded-full text-gray-400 border border-white/5">Loading...</span>
             </div>
             
-            <div id="notes-list" class="flex flex-col gap-3">
+            <div id="notes-list" class="flex flex-col gap-4">
                 <div class="flex justify-center py-10">
                     <div class="loader"></div>
                 </div>
             </div>
         </div>
 
+        <!-- FOOTER -->
+        <div class="mt-8 mb-4 text-center">
+            <p class="text-[10px] text-cyan-200 font-mono tracking-[0.2em] font-bold drop-shadow-[0_0_5px_rgba(34,211,238,0.8)] opacity-70">
+                CREATE BY SMF RAHSANTIKAAA. ALL RIGHTS RESERVED. VERSION 1.0
+            </p>
+        </div>
+
     </div>
 
     <!-- TOAST NOTIFICATION -->
-    <div id="toast-container" class="fixed bottom-5 left-1/2 transform -translate-x-1/2 z-[60] flex flex-col gap-2 pointer-events-none w-full max-w-xs px-4"></div>
+    <div id="toast-container" class="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-[70] flex flex-col gap-3 pointer-events-none w-full max-w-sm px-4"></div>
 
     <!-- MODAL TELEGRAM SETUP -->
-    <div id="telegram-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] hidden flex items-center justify-center p-4">
-        <div class="glass-panel bg-[#1e1b4b] p-6 rounded-xl max-w-md w-full shadow-2xl border border-gray-600 transform scale-100 transition-transform">
-            <div class="flex justify-between items-center mb-4">
+    <div id="telegram-modal" class="fixed inset-0 bg-black/90 backdrop-blur-md z-[60] hidden flex items-center justify-center p-4">
+        <div class="glass-panel bg-[#0b1221] p-6 rounded-2xl max-w-md w-full shadow-2xl border border-gray-700 transform scale-100 transition-transform">
+            <div class="flex justify-between items-center mb-5">
                 <h3 class="text-xl font-bold text-white flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
                     Setup Telegram Bot
                 </h3>
-                <button onclick="closeTelegramModal()" class="text-gray-400 hover:text-white">✕</button>
+                <button onclick="closeTelegramModal()" class="text-gray-400 hover:text-white transition bg-white/5 rounded-full p-1">✕</button>
             </div>
             
-            <div class="space-y-4">
-                <div class="flex justify-between items-end">
-                    <p class="text-gray-300 text-sm">Daftar Chat ID yang Terdaftar</p>
-                    <span id="chat-count" class="text-xs bg-blue-600 px-2 py-0.5 rounded text-white font-bold">0</span>
+            <div class="space-y-5">
+                <div class="flex justify-between items-end border-b border-gray-800 pb-2">
+                    <p class="text-gray-400 text-sm font-medium">Daftar Chat ID Terdaftar</p>
+                    <span id="chat-count" class="text-xs bg-blue-600 px-2 py-0.5 rounded-md text-white font-bold shadow-sm">0</span>
                 </div>
 
                 <!-- LIST CHAT ID -->
-                <div id="chat-id-list" class="max-h-32 overflow-y-auto bg-black/20 rounded border border-gray-700 p-2 space-y-1 text-sm text-gray-300 font-mono">
+                <div id="chat-id-list" class="max-h-36 overflow-y-auto bg-black/40 rounded-lg border border-gray-700 p-2 space-y-1.5 text-sm text-gray-300 font-mono scrollbar-thin">
                     <div class="text-center text-gray-500 text-xs italic py-2">Memuat data...</div>
                 </div>
                 
-                <hr class="border-gray-700 my-2">
-
-                <div>
-                    <label class="block text-xs text-cyan-400 mb-1 uppercase font-bold">Tambah Chat ID Baru</label>
-                    <input type="text" id="telegram-chat-id" placeholder="Contoh: 123456789" 
-                        class="w-full bg-black/30 border border-gray-500 rounded px-3 py-2 text-white focus:border-cyan-500 focus:outline-none mb-2">
+                <div class="space-y-3">
+                    <div>
+                        <label class="block text-xs text-cyan-400 mb-1.5 uppercase font-bold tracking-wide">Tambah Chat ID Baru</label>
+                        <input type="text" id="telegram-chat-id" placeholder="Contoh: 123456789" 
+                            class="w-full bg-black/40 border border-gray-600 rounded-lg px-3 py-2.5 text-white focus:border-cyan-500 focus:outline-none placeholder-gray-600">
+                    </div>
                     
-                    <input type="password" id="tele-pass" placeholder="Password (Wajib: wah12345)" 
-                        class="w-full bg-black/30 border border-red-900/50 rounded px-3 py-2 text-white focus:border-red-500 focus:outline-none text-sm">
-                        
-                    <p class="text-[10px] text-gray-400 mt-1">
-                        *Tips: Chat ke bot <a href="https://t.me/userinfobot" target="_blank" class="text-blue-400 underline">@userinfobot</a> untuk melihat ID.
+                    <div>
+                        <input type="password" id="tele-pass" placeholder="Password (Wajib: wah12345)" 
+                            class="w-full bg-black/40 border border-red-500/30 rounded-lg px-3 py-2.5 text-white focus:border-red-500 focus:outline-none text-sm placeholder-red-400/30">
+                    </div>
+
+                    <p class="text-[11px] text-gray-400 bg-white/5 p-2 rounded">
+                        *Tips: Chat ke bot <a href="https://t.me/userinfobot" target="_blank" class="text-blue-400 underline font-bold">@userinfobot</a> untuk melihat ID Anda.
                     </p>
                 </div>
 
-                <div class="flex justify-end gap-2 pt-2">
-                    <button onclick="testTelegram()" class="px-4 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-white text-sm">Tes Pesan</button>
-                    <button onclick="saveTelegramSettings()" class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm">Simpan ke Cloud</button>
+                <div class="flex justify-end gap-3 pt-2">
+                    <button onclick="testTelegram()" class="px-4 py-2.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-white text-sm font-medium transition border border-gray-600">Tes Pesan</button>
+                    <button onclick="saveTelegramSettings()" class="px-5 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm shadow-md transition transform hover:-translate-y-0.5">Simpan ke Cloud</button>
                 </div>
             </div>
         </div>
@@ -377,13 +393,14 @@
             const container = document.getElementById('toast-container');
             const toast = document.createElement('div');
             
-            let bgColor = 'bg-gray-800';
-            if (type === 'error') bgColor = 'bg-red-600';
-            if (type === 'success') bgColor = 'bg-green-600';
-            if (type === 'warning') bgColor = 'bg-orange-600';
+            let bgColor = 'bg-gray-800/90';
+            let icon = 'ℹ️';
+            if (type === 'error') { bgColor = 'bg-red-600/90'; icon = '❌'; }
+            if (type === 'success') { bgColor = 'bg-green-600/90'; icon = '✅'; }
+            if (type === 'warning') { bgColor = 'bg-orange-600/90'; icon = '⚠️'; }
 
-            toast.className = `${bgColor} text-white px-6 py-3 rounded-lg shadow-lg text-sm font-medium text-center shadow-black/30 transition-all duration-300 transform translate-y-10 opacity-0`;
-            toast.innerText = message;
+            toast.className = `${bgColor} backdrop-blur-md text-white px-6 py-4 rounded-xl shadow-2xl text-sm font-semibold text-center border border-white/10 transition-all duration-300 transform translate-y-10 opacity-0 flex items-center justify-center gap-2`;
+            toast.innerHTML = `<span>${icon}</span><span>${message}</span>`;
 
             container.appendChild(toast);
             requestAnimationFrame(() => toast.classList.remove('translate-y-10', 'opacity-0'));
@@ -399,17 +416,17 @@
             const dotMob = document.getElementById('cloud-dot-mobile');
             
             if (online) {
-                const style = "w-2 h-2 rounded-full bg-green-500 shadow-[0_0_5px_#22c55e]";
+                const style = "w-2.5 h-2.5 rounded-full bg-green-500 shadow-[0_0_8px_#22c55e]";
                 dot.className = style;
                 if(dotMob) dotMob.className = style;
                 text.innerText = "Connected";
-                text.className = "text-green-400";
+                text.className = "text-green-300 font-semibold";
             } else {
-                const style = "w-2 h-2 rounded-full bg-red-500";
+                const style = "w-2.5 h-2.5 rounded-full bg-red-500";
                 dot.className = style;
                 if(dotMob) dotMob.className = style;
                 text.innerText = "Offline";
-                text.className = "text-red-400";
+                text.className = "text-red-400 font-semibold";
             }
         }
 
@@ -515,7 +532,7 @@
                     let rawTime = rec.Time || "00:00";
                     if(rawTime.length > 5) rawTime = rawTime.substring(0, 5);
                     
-                    // FORCE BOOLEAN FROM DB (1/true => true)
+                    // FORCE BOOLEAN FROM DB
                     let loopVal = false;
                     if(rec.Loop === true || rec.Loop === 1 || rec.Loop === "true") loopVal = true;
 
@@ -531,7 +548,6 @@
                         isRinging: false
                     };
                 });
-                // Sort by Date then Time
                 notes.sort((a, b) => {
                     if (a.targetDate !== b.targetDate) return a.targetDate.localeCompare(b.targetDate);
                     return a.time.localeCompare(b.time);
@@ -547,19 +563,16 @@
         function updateChatIdListUI() {
             const listContainer = document.getElementById('chat-id-list');
             const countBadge = document.getElementById('chat-count');
-            
             countBadge.innerText = telegramChatIds.length;
             listContainer.innerHTML = '';
-
             if (telegramChatIds.length === 0) {
-                listContainer.innerHTML = '<div class="text-center text-gray-500 text-xs italic py-2">Belum ada Chat ID terdaftar.</div>';
+                listContainer.innerHTML = '<div class="text-center text-gray-500 text-xs italic py-4">Belum ada Chat ID terdaftar.</div>';
                 return;
             }
-
             telegramChatIds.forEach(item => {
                 const div = document.createElement('div');
-                div.className = "flex justify-between items-center bg-white/5 px-2 py-1 rounded";
-                div.innerHTML = `<span>${maskChatId(item.chatId)}</span><span class="text-[10px] text-green-400">Aktif</span>`;
+                div.className = "flex justify-between items-center bg-white/5 px-3 py-2 rounded-lg border border-white/5";
+                div.innerHTML = `<span class="font-mono text-cyan-300 tracking-wider">${maskChatId(item.chatId)}</span><span class="text-[10px] text-green-400 bg-green-900/30 px-2 py-0.5 rounded border border-green-500/30">Aktif</span>`;
                 listContainer.appendChild(div);
             });
         }
@@ -719,30 +732,30 @@
             }
             notes.forEach(note => {
                 const el = document.createElement('div');
-                el.className = `glass-panel p-4 rounded-lg flex items-center justify-between transition hover:bg-white/10 group ${note.isRinging ? 'border-green-500 bg-green-900/20' : ''}`;
+                el.className = `glass-panel p-4 md:p-5 rounded-2xl flex items-center justify-between transition hover:bg-white/10 group border border-white/5 ${note.isRinging ? 'border-green-500 bg-green-900/20' : ''}`;
                 
-                const msgPreview = note.message ? `<div class="text-xs text-gray-400 mt-1 truncate max-w-[200px]">💬 ${note.message}</div>` : '';
+                const msgPreview = note.message ? `<div class="text-xs text-gray-400 mt-1.5 truncate max-w-[200px] flex items-center gap-1"><span>💬</span> ${note.message}</div>` : '';
                 const loopBadge = note.isLoop 
-                    ? `<span class="text-xs text-yellow-400 font-semibold mt-1">🔄 ${getRepeatLabel(note)}</span>`
-                    : `<span class="text-xs text-blue-400 font-semibold mt-1">⚡ Sekali Jalan</span>`;
+                    ? `<span class="text-[10px] md:text-xs text-yellow-300 bg-yellow-900/30 px-2 py-0.5 rounded border border-yellow-500/30 mt-2 inline-block font-medium">🔄 ${getRepeatLabel(note)}</span>`
+                    : `<span class="text-[10px] md:text-xs text-blue-300 bg-blue-900/30 px-2 py-0.5 rounded border border-blue-500/30 mt-2 inline-block font-medium">⚡ Sekali Jalan</span>`;
 
                 const dateStr = formatDateFriendly(note.targetDate);
 
                 el.innerHTML = `
-                    <div class="flex items-center gap-4 overflow-hidden">
-                        <div class="flex flex-col items-center justify-center bg-black/40 rounded-lg p-2 min-w-[80px]">
+                    <div class="flex items-center gap-4 overflow-hidden w-full">
+                        <div class="flex flex-col items-center justify-center bg-black/30 rounded-xl p-2.5 min-w-[85px] border border-white/10">
                             <span class="text-2xl font-bold font-mono text-cyan-400">${note.time}</span>
-                            <span class="text-[10px] text-gray-400 uppercase text-center leading-tight">${dateStr}</span>
+                            <span class="text-[9px] text-gray-400 uppercase text-center leading-tight mt-1 px-1">${dateStr}</span>
                         </div>
-                        <div class="flex flex-col min-w-0">
-                            <span class="text-lg font-medium truncate ${note.isRinging ? 'text-green-400 font-bold' : 'text-white'}">${note.text}</span>
+                        <div class="flex flex-col min-w-0 flex-1">
+                            <span class="text-lg font-bold truncate ${note.isRinging ? 'text-green-400' : 'text-white'}">${note.text}</span>
                             ${msgPreview}
-                            ${loopBadge}
+                            <div>${loopBadge}</div>
                         </div>
                     </div>
-                    <div class="flex gap-2 ml-2">
-                        <button onclick="editNote(${note.id})" class="p-2 bg-blue-600/50 hover:bg-blue-600 rounded text-white transition" title="Edit">✎</button>
-                        <button onclick="requestDelete(${note.id})" class="p-2 bg-red-600/50 hover:bg-red-600 rounded text-white transition" title="Hapus">🗑</button>
+                    <div class="flex flex-col gap-2 ml-3">
+                        <button onclick="editNote(${note.id})" class="p-2 bg-blue-600/30 hover:bg-blue-600 rounded-lg text-white transition border border-blue-500/30" title="Edit">✎</button>
+                        <button onclick="requestDelete(${note.id})" class="p-2 bg-red-600/30 hover:bg-red-600 rounded-lg text-white transition border border-red-500/30" title="Hapus">🗑</button>
                     </div>
                 `;
                 listEl.appendChild(el);
@@ -788,7 +801,7 @@
             }
         }
 
-        // --- 5. LOGIKA ALARM (FINAL REFINED) ---
+        // --- 5. LOGIKA ALARM ---
         function checkAlarms(currentWitaTime) {
             const now = new Date();
             const optionsDate = { timeZone: 'Asia/Makassar', year: 'numeric', month: '2-digit', day: '2-digit' };
@@ -809,13 +822,13 @@
             notes.forEach(note => {
                 let shouldRing = false;
                 
-                // AUTO-DELETE Logic
+                // AUTO-DELETE (One-Time)
                 if (!note.isLoop) {
                     let isExpired = false;
                     if (note.targetDate < todayStr) isExpired = true;
                     else if (note.targetDate === todayStr) {
                          const [targetH, targetM] = note.time.split(':').map(Number);
-                         // Expire if current time is > target time + 1 minute (tolerance)
+                         // Expire if passed 1 minute
                          if (currentTotalMins > (targetH * 60 + targetM + 1)) {
                              isExpired = true;
                          }
@@ -823,7 +836,6 @@
                     
                     if (isExpired && !note.isRinging && !note.isDeleting) {
                         note.isDeleting = true; 
-                        console.log("Cleanup expired note:", note.text);
                         deleteFromCloud(NOCO_CONFIG.tableJadwal, note.id).then(() => {
                              notes = notes.filter(n => n.id !== note.id);
                              renderNotes();
@@ -878,7 +890,6 @@
                              sendTelegramAlert(note, currentHM);
                              
                              if (!note.isLoop) {
-                                 console.log("Auto Deleting (Rung)...", note.id);
                                  note.isDeleting = true;
                                  deleteFromCloud(NOCO_CONFIG.tableJadwal, note.id).then(() => {
                                      notes = notes.filter(n => n.id !== note.id);
@@ -896,7 +907,7 @@
             if (needRender) renderNotes();
         }
 
-        // --- AUDIO, TELEGRAM, UTILS ---
+        // --- AUDIO & VOLUME ---
         let audioCtx;
         let isAudioEnabled = false;
         let masterVolume = 0.1;
@@ -925,19 +936,17 @@
             const volWrapper = document.getElementById("volume-wrapper");
             if (isAudioEnabled) {
                 isAudioEnabled = false;
-                btn.classList.replace("bg-green-500/20", "bg-white/10");
-                btn.classList.replace("border-green-500", "border-white/10");
+                btn.classList.replace("bg-white/15", "bg-white/10");
                 icon.innerText = "🔇"; text.innerText = "Klik untuk aktifkan";
-                volWrapper.classList.add("opacity-50", "pointer-events-none");
+                volWrapper.classList.add("opacity-60", "pointer-events-none");
             } else {
                 try {
                     if (!audioCtx) audioCtx = new(window.AudioContext || window.webkitAudioContext)();
                     if (audioCtx.state === "suspended") audioCtx.resume();
                     isAudioEnabled = true;
-                    btn.classList.replace("bg-white/10", "bg-green-500/20");
-                    btn.classList.replace("border-white/10", "border-green-500");
+                    btn.classList.replace("bg-white/10", "bg-white/15");
                     icon.innerText = "🔊"; text.innerText = "Suara Aktif";
-                    volWrapper.classList.remove("opacity-50", "pointer-events-none");
+                    volWrapper.classList.remove("opacity-60", "pointer-events-none");
                     playTing(); 
                 } catch (e) {}
             }
@@ -955,43 +964,13 @@
             } catch (e) {}
         }
         
-        function sendTelegramAlert(note, currentRealTime) {
-            if (telegramChatIds.length === 0) return; 
-            const timeDisplay = (note.repeatType === 'interval') ? currentRealTime : note.time;
-            const repeatLabel = note.isLoop ? getRepeatLabel(note) : "Sekali Jalan";
-            let message = `🔔 <b>${note.text.toUpperCase()}</b> 🔔`;
-            if (note.message) message += `\n\n📝 ${note.message}`;
-            message += `\n\n⏰ Waktu: ${timeDisplay} WITA\n🔄 Status: ${repeatLabel}\n✅ <b>SUDAH DIMULAI</b>`;
-            telegramChatIds.forEach(target => {
-                const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage?chat_id=${target.chatId}&text=${encodeURIComponent(message)}&parse_mode=HTML`;
-                fetch(url).catch(e => console.error(e));
-            });
-        }
-        
-        function updateChatIdListUI() {
-            const listContainer = document.getElementById('chat-id-list');
-            const countBadge = document.getElementById('chat-count');
-            countBadge.innerText = telegramChatIds.length;
-            listContainer.innerHTML = '';
-            if (telegramChatIds.length === 0) {
-                listContainer.innerHTML = '<div class="text-center text-gray-500 text-xs italic py-2">Belum ada Chat ID terdaftar.</div>';
-                return;
-            }
-            telegramChatIds.forEach(item => {
-                const div = document.createElement('div');
-                div.className = "flex justify-between items-center bg-white/5 px-2 py-1 rounded";
-                div.innerHTML = `<span>${maskChatId(item.chatId)}</span><span class="text-[10px] text-green-400">Aktif</span>`;
-                listContainer.appendChild(div);
-            });
-        }
-
+        // --- OTHER UTILS ---
         function toggleIntervalInput() {
             const type = document.getElementById('repeat-type').value;
             const input = document.getElementById('interval-input');
             if (type === 'interval') { input.classList.remove('hidden'); input.focus(); } 
             else { input.classList.add('hidden'); }
         }
-        
         function toggleLoopOptions() {
             const isLoop = document.getElementById('loop-check').checked;
             const optionsDiv = document.getElementById('loop-options');
@@ -1006,7 +985,6 @@
                 hint.classList.remove('hidden');
             }
         }
-
         function closeModal() { document.getElementById('modal-overlay').classList.add('hidden'); pendingDeleteId = null; }
         function openTelegramModal() { document.getElementById('telegram-modal').classList.remove('hidden'); }
         function closeTelegramModal() { document.getElementById('telegram-modal').classList.add('hidden'); }
@@ -1025,7 +1003,6 @@
             document.getElementById('cancel-btn').classList.add('hidden');
             editModeId = null;
         }
-
         function getRepeatLabel(note) {
             if (note.repeatType === 'interval') return `Tiap ${note.repeatInterval} Menit`;
             if (note.repeatType === 'daily') return 'Setiap Hari';
