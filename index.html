@@ -79,10 +79,41 @@
             border-radius: 2px;
         }
 
-        /* Time Input Icon Styling */
-        input[type="time"]::-webkit-calendar-picker-indicator {
+        /* Input Icon Styling (Date/Time) */
+        input[type="time"]::-webkit-calendar-picker-indicator,
+        input[type="date"]::-webkit-calendar-picker-indicator {
             filter: invert(1) brightness(100%);
             cursor: pointer;
+        }
+        
+        /* Checkbox Styling */
+        .custom-checkbox {
+            appearance: none;
+            background-color: rgba(0,0,0,0.3);
+            margin: 0;
+            font: inherit;
+            color: currentColor;
+            width: 1.15em;
+            height: 1.15em;
+            border: 1px solid currentColor;
+            border-radius: 0.15em;
+            display: grid;
+            place-content: center;
+            cursor: pointer;
+        }
+        .custom-checkbox::before {
+            content: "";
+            width: 0.65em;
+            height: 0.65em;
+            transform: scale(0);
+            transition: 120ms transform ease-in-out;
+            box-shadow: inset 1em 1em white;
+            background-color: white;
+            transform-origin: center;
+            clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+        }
+        .custom-checkbox:checked::before {
+            transform: scale(1);
         }
     </style>
 </head>
@@ -106,14 +137,13 @@
         <div class="glass-panel w-full rounded-2xl p-6 md:p-8 text-center shadow-2xl relative overflow-hidden group">
             <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-cyan-500 to-blue-500"></div>
             
-            <!-- Cloud Status Indicator (Moved Inside Panel for Mobile) -->
+            <!-- Cloud Status Indicator (Mobile) -->
             <div class="absolute top-3 left-3 md:top-4 md:left-4 z-10 flex items-center gap-2 px-2 md:px-3 py-1 bg-black/40 rounded-full text-[10px] md:text-xs border border-white/10 md:hidden" id="cloud-status-mobile">
                 <div class="w-2 h-2 rounded-full bg-gray-500" id="cloud-dot-mobile"></div>
             </div>
 
             <h2 class="text-cyan-400 tracking-[0.2em] text-xs md:text-base font-bold mb-2 opacity-80 mt-6 md:mt-0">WAKTU INDONESIA TENGAH (WITA)</h2>
             
-            <!-- Responsive Font Size -->
             <div id="clock-display" class="clock-font text-5xl sm:text-6xl md:text-8xl font-bold text-white mb-2 tracking-wide">
                 00:00:00
             </div>
@@ -145,42 +175,62 @@
             
             <div class="flex flex-col gap-3">
                 <!-- Baris 1: Judul -->
-                <input type="text" id="note-input" placeholder="Judul Kegiatan (Akan jadi judul pesan)" 
+                <input type="text" id="note-input" placeholder="Judul Kegiatan (Contoh: Rapat Tim)" 
                     class="w-full bg-black/30 border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:border-cyan-500 transition text-white placeholder-gray-500 font-bold text-sm md:text-base">
                 
                 <!-- Baris 2: Pesan Tambahan (Isi) -->
                 <textarea id="msg-input" rows="2" placeholder="Isi Pesan Telegram (Opsional)" 
                     class="w-full bg-black/30 border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:border-cyan-500 transition text-white placeholder-gray-500 text-sm resize-none"></textarea>
 
-                <!-- Baris 3: Waktu & Pengaturan Frekuensi -->
+                <!-- Baris 3: Tanggal & Waktu -->
                 <div class="flex flex-col md:flex-row gap-3">
-                    <div class="flex-1 flex gap-3 items-center justify-center bg-black/30 border border-gray-600 rounded-lg px-3 py-3 focus-within:border-cyan-500 transition w-full">
-                        <!-- Custom Time Picker (JAM) -->
-                        <select id="hour-input" class="bg-transparent text-white text-center font-bold text-lg outline-none appearance-none cursor-pointer w-12 hover:text-cyan-400 border-none p-0 focus:ring-0">
-                            <!-- JS will populate 00-23 -->
-                        </select>
-                        <span class="text-white font-bold mx-1">:</span>
-                        <!-- Custom Time Picker (MENIT) -->
-                        <select id="minute-input" class="bg-transparent text-white text-center font-bold text-lg outline-none appearance-none cursor-pointer w-12 hover:text-cyan-400 border-none p-0 focus:ring-0">
-                            <!-- JS will populate 00-59 -->
-                        </select>
-                        <span class="text-xs text-gray-500 ml-2 font-mono">WITA</span>
+                    <!-- TANGGAL (NEW) -->
+                    <div class="flex-1">
+                        <label class="text-[10px] text-gray-400 uppercase font-bold ml-1">Mulai Tanggal</label>
+                        <input type="date" id="date-input" 
+                            class="w-full bg-black/30 border border-gray-600 rounded-lg px-3 py-3 focus:outline-none focus:border-cyan-500 transition text-white scheme-dark cursor-pointer h-[48px]">
                     </div>
                     
-                    <div class="flex-1 flex gap-3 w-full">
-                        <select id="repeat-type" onchange="toggleIntervalInput()" class="flex-1 bg-black/30 border border-gray-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-cyan-500 cursor-pointer text-sm md:text-base w-full">
-                            <option value="daily">Setiap Hari</option>
-                            <option value="hourly">Setiap Jam</option>
-                            <option value="custom">Setiap ... Menit</option>
-                        </select>
-                        
-                        <input type="number" id="interval-input" min="1" max="1440" placeholder="Menit" 
-                            class="hidden w-20 bg-black/30 border border-gray-600 rounded-lg px-3 py-3 text-white focus:outline-none focus:border-cyan-500 text-center text-sm md:text-base">
+                    <!-- JAM (Custom Selector) -->
+                    <div class="flex-1">
+                        <label class="text-[10px] text-gray-400 uppercase font-bold ml-1">Jam (WITA)</label>
+                        <div class="flex gap-2 items-center justify-center bg-black/30 border border-gray-600 rounded-lg px-3 py-3 focus-within:border-cyan-500 transition h-[48px]">
+                            <select id="hour-input" class="bg-transparent text-white text-center font-bold text-lg outline-none appearance-none cursor-pointer w-12 hover:text-cyan-400 border-none p-0 focus:ring-0">
+                                <!-- JS will populate -->
+                            </select>
+                            <span class="text-white font-bold">:</span>
+                            <select id="minute-input" class="bg-transparent text-white text-center font-bold text-lg outline-none appearance-none cursor-pointer w-12 hover:text-cyan-400 border-none p-0 focus:ring-0">
+                                <!-- JS will populate -->
+                            </select>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Baris 4: Password & Tombol -->
-                <div class="flex flex-col md:flex-row gap-3 mt-2">
+                <!-- Baris 4: Opsi Perulangan -->
+                <div class="flex items-center gap-3 bg-black/20 p-3 rounded-lg border border-gray-700">
+                    <div class="flex items-center gap-2 cursor-pointer" onclick="document.getElementById('loop-check').click()">
+                        <input type="checkbox" id="loop-check" class="custom-checkbox text-cyan-500" onchange="toggleLoopOptions()">
+                        <span class="text-sm font-semibold text-gray-300">Ulangi Jadwal?</span>
+                    </div>
+
+                    <div id="loop-options" class="flex-1 flex gap-2 hidden">
+                        <select id="repeat-type" onchange="toggleIntervalInput()" class="flex-1 bg-black/40 border border-gray-600 rounded-lg px-2 py-2 text-white text-xs md:text-sm focus:outline-none focus:border-cyan-500">
+                            <option value="interval">Tiap X Menit (Tipe A)</option>
+                            <option value="daily">Setiap Hari (Tipe B)</option>
+                            <option value="weekly">Setiap Minggu (Tipe B)</option>
+                            <option value="monthly">Setiap Bulan (Tipe B)</option>
+                        </select>
+                        
+                        <input type="number" id="interval-input" min="1" max="1440" placeholder="Menit" 
+                            class="w-20 bg-black/40 border border-gray-600 rounded-lg px-2 py-2 text-white text-center text-xs md:text-sm focus:outline-none focus:border-cyan-500">
+                    </div>
+                </div>
+                <p id="loop-hint" class="text-[10px] text-gray-500 italic ml-1">
+                    *Jika tidak dicentang, jadwal akan otomatis dihapus setelah berbunyi (Auto-Delete).
+                </p>
+
+                <!-- Baris 5: Password & Tombol -->
+                <div class="flex flex-col md:flex-row gap-3 mt-2 pt-2 border-t border-gray-700">
                     <input type="password" id="admin-pass" placeholder="Password (Wajib)" 
                         class="flex-1 bg-black/30 border border-red-900/50 rounded-lg px-4 py-3 focus:outline-none focus:border-red-500 transition text-white placeholder-red-300/50 text-sm md:text-base">
 
@@ -276,17 +326,19 @@
         const TELEGRAM_BOT_TOKEN = "8040137929:AAGA45pKgFdOLhiBVfeuOpM7LQ9ucDWd9IA";
         const ADMIN_PASS = "wah12345";
         
-        let notes = []; // Data jadwal lokal
+        let notes = []; 
         let telegramChatIds = []; 
         let editModeId = null; 
-        let volumeRecordId = null; // ID record volume di cloud
+        let volumeRecordId = null; 
 
-        // --- INIT Time Picker Options ---
+        // --- INIT Options ---
         function initTimeSelects() {
             const hourSelect = document.getElementById('hour-input');
             const minuteSelect = document.getElementById('minute-input');
             
-            // Populate Hours 00-23
+            hourSelect.innerHTML = "";
+            minuteSelect.innerHTML = "";
+
             for(let i=0; i<24; i++) {
                 const opt = document.createElement('option');
                 const val = i.toString().padStart(2, '0');
@@ -296,7 +348,6 @@
                 hourSelect.appendChild(opt);
             }
             
-            // Populate Minutes 00-59
             for(let i=0; i<60; i++) {
                 const opt = document.createElement('option');
                 const val = i.toString().padStart(2, '0');
@@ -316,6 +367,9 @@
                 hourSelect.value = h.trim(); 
                 minuteSelect.value = m.trim();
             }
+
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('date-input').value = today;
         }
 
         // --- UTILITIES ---
@@ -372,9 +426,7 @@
             if ('wakeLock' in navigator) {
                 try {
                     wakeLock = await navigator.wakeLock.request('screen');
-                } catch (err) {
-                    // Ignore error
-                }
+                } catch (err) {}
             }
         }
         document.addEventListener('visibilitychange', async () => {
@@ -433,40 +485,30 @@
             setCloudStatus(true);
             requestWakeLock();
             
-            // 1. Fetch Chat IDs (List)
+            // 1. Chat IDs
             const chatRecords = await fetchFromCloud(NOCO_CONFIG.tableChat);
             if (chatRecords) {
-                telegramChatIds = chatRecords.map(r => ({
-                    recordId: r.Id,
-                    chatId: r.TelegramID
-                }));
-            } else {
-                telegramChatIds = [];
+                telegramChatIds = chatRecords.map(r => ({ recordId: r.Id, chatId: r.TelegramID }));
             }
             updateChatIdListUI();
 
-            // 2. Fetch Volume (UPDATED: Check 'vol' column based on screenshot)
+            // 2. Volume
             try {
                 const volRecords = await fetchFromCloud(NOCO_CONFIG.tableVolume);
                 if (volRecords && volRecords.length > 0) {
                     const rec = volRecords[0];
                     volumeRecordId = rec.Id;
-                    
-                    // FIX: Check column name "vol" instead of "Volume"
                     const volVal = (rec.vol !== undefined && rec.vol !== null) ? rec.vol : 10;
-                    
-                    // Update Local State
                     masterVolume = volVal / 100;
                     document.getElementById('volume-slider').value = volVal;
                     document.getElementById('volume-display').innerText = volVal + "%";
                 } else {
-                    // FIX: Create default volume using "vol" column
                     const res = await postToCloud(NOCO_CONFIG.tableVolume, { vol: 10 });
                     volumeRecordId = res.Id;
                 }
-            } catch (e) { console.log("Vol Fetch Err", e); }
+            } catch (e) { console.log("Vol Err", e); }
 
-            // 3. Fetch Jadwal
+            // 3. Jadwal (NOTES)
             const jadwalRecords = await fetchFromCloud(NOCO_CONFIG.tableJadwal);
             if (jadwalRecords) {
                 notes = jadwalRecords.map(rec => {
@@ -478,12 +520,17 @@
                         text: rec.Title || "", 
                         message: rec.Notes || "",
                         time: rawTime, 
-                        repeatType: rec.RepeatType || "daily", 
-                        repeatInterval: rec.RepeatInterval ? parseInt(rec.RepeatInterval) : 1, 
+                        targetDate: rec.Date || "", 
+                        isLoop: rec.Loop === true || rec.Loop === 1, 
+                        repeatType: rec.RepeatType || "interval", 
+                        repeatInterval: rec.RepeatInterval ? parseInt(rec.RepeatInterval) : 30, 
                         isRinging: false
                     };
                 });
-                notes.sort((a, b) => a.time.localeCompare(b.time));
+                notes.sort((a, b) => {
+                    if (a.targetDate !== b.targetDate) return a.targetDate.localeCompare(b.targetDate);
+                    return a.time.localeCompare(b.time);
+                });
                 renderNotes();
                 setCloudStatus(true);
             } else {
@@ -492,88 +539,31 @@
             }
         }
 
-        function updateChatIdListUI() {
-            const listContainer = document.getElementById('chat-id-list');
-            const countBadge = document.getElementById('chat-count');
-            
-            countBadge.innerText = telegramChatIds.length;
-            listContainer.innerHTML = '';
-
-            if (telegramChatIds.length === 0) {
-                listContainer.innerHTML = '<div class="text-center text-gray-500 text-xs italic py-2">Belum ada Chat ID terdaftar.</div>';
-                return;
-            }
-
-            telegramChatIds.forEach(item => {
-                const div = document.createElement('div');
-                div.className = "flex justify-between items-center bg-white/5 px-2 py-1 rounded";
-                div.innerHTML = `
-                    <span>${maskChatId(item.chatId)}</span>
-                    <span class="text-[10px] text-green-400">Aktif</span>
-                `;
-                listContainer.appendChild(div);
-            });
-        }
-
-        async function saveTelegramSettings() {
-            const chatId = document.getElementById('telegram-chat-id').value.trim();
-            const pass = document.getElementById('tele-pass').value;
-
-            if (!chatId) return showToast("Chat ID Kosong!", "error");
-            if (pass !== ADMIN_PASS) return showToast("Password Salah!", "error");
-
-            const btn = document.querySelector("#telegram-modal button:last-child");
-            const originalText = btn.innerText;
-            btn.innerText = "Menyimpan...";
-            btn.disabled = true;
-
-            try {
-                // Add NEW Record
-                const res = await postToCloud(NOCO_CONFIG.tableChat, { TelegramID: chatId });
-                
-                // Update Local List
-                telegramChatIds.push({
-                    recordId: res.Id,
-                    chatId: chatId
-                });
-                updateChatIdListUI();
-                
-                // Clear inputs
-                document.getElementById('telegram-chat-id').value = '';
-                document.getElementById('tele-pass').value = '';
-
-                showToast("Chat ID Berhasil Ditambahkan", "success");
-            } catch (e) {
-                showToast("Gagal simpan: " + e.message, "error");
-            } finally {
-                btn.innerText = originalText;
-                btn.disabled = false;
-            }
-        }
-
         // --- 3. CRUD OPERATIONS ---
         async function addOrUpdateNote() {
-            // Check password directly from the main input
             const passInput = document.getElementById('admin-pass');
             if (passInput.value !== ADMIN_PASS) {
-                return showToast("Password Salah! Isi di kolom bawah.", "error");
+                return showToast("Password Salah!", "error");
             }
 
             const text = document.getElementById('note-input').value.trim();
             const message = document.getElementById('msg-input').value.trim();
+            const dateVal = document.getElementById('date-input').value; 
             
             const hour = document.getElementById('hour-input').value;
             const minute = document.getElementById('minute-input').value;
             const time = `${hour}:${minute}`;
             
+            const isLoop = document.getElementById('loop-check').checked;
             const repeatType = document.getElementById('repeat-type').value;
             const intervalInput = document.getElementById('interval-input');
-            let repeatInterval = 1;
+            let interval = 30;
 
-            if (!text) return showToast("Judul wajib diisi!", "error");
-            if (repeatType === 'custom') {
-                repeatInterval = parseInt(intervalInput.value);
-                if (!repeatInterval || repeatInterval < 1) return showToast("Interval salah!", "error");
+            if (!text || !dateVal) return showToast("Judul & Tanggal wajib diisi!", "error");
+            
+            if (isLoop && repeatType === 'interval') {
+                interval = parseInt(intervalInput.value);
+                if (!interval || interval < 1) return showToast("Interval salah!", "error");
             }
 
             const btn = document.getElementById('add-btn');
@@ -587,8 +577,10 @@
                 Title: text,
                 Notes: message,
                 Time: timePayload,
-                RepeatType: repeatType,
-                RepeatInterval: Number(repeatInterval) 
+                Date: dateVal,       
+                Loop: isLoop,        
+                RepeatType: isLoop ? repeatType : null,
+                RepeatInterval: isLoop ? Number(interval) : null
             };
 
             try {
@@ -598,18 +590,21 @@
                     
                     const index = notes.findIndex(n => n.id === editModeId);
                     if (index !== -1) {
-                        notes[index] = { ...notes[index], id: editModeId, text, message, time, repeatType, repeatInterval };
+                        notes[index] = { 
+                            ...notes[index], 
+                            id: editModeId, text, message, time, 
+                            targetDate: dateVal, isLoop, repeatType, repeatInterval: interval 
+                        };
                     }
                     showToast("Diupdate di Cloud", "success");
-
                 } else {
                     const res = await postToCloud(NOCO_CONFIG.tableJadwal, payload);
-                    
                     notes.push({
                         id: res.Id, 
-                        text, message, time, repeatType, repeatInterval, isRinging: false
+                        text, message, time, 
+                        targetDate: dateVal, isLoop, repeatType, repeatInterval: interval, 
+                        isRinging: false
                     });
-                    
                     showToast("Tersimpan di Cloud", "success");
                 }
                 
@@ -625,13 +620,54 @@
             }
         }
 
-        // Direct delete function, bypasses modal, uses main password field
+        // --- 4. RENDER & UI (ADDED BACK) ---
+        function renderNotes() {
+            const listEl = document.getElementById('notes-list');
+            const countEl = document.getElementById('total-notes');
+            countEl.innerText = notes.length + " Catatan";
+            listEl.innerHTML = '';
+            if (notes.length === 0) {
+                listEl.innerHTML = '<div class="text-center py-10 text-gray-500 italic">Belum ada catatan di Cloud.</div>';
+                return;
+            }
+            notes.forEach(note => {
+                const el = document.createElement('div');
+                el.className = `glass-panel p-4 rounded-lg flex items-center justify-between transition hover:bg-white/10 group ${note.isRinging ? 'border-green-500 bg-green-900/20' : ''}`;
+                
+                const msgPreview = note.message ? `<div class="text-xs text-gray-400 mt-1 truncate max-w-[200px]">💬 ${note.message}</div>` : '';
+                const loopBadge = note.isLoop 
+                    ? `<span class="text-xs text-yellow-400 font-semibold mt-1">🔄 ${getRepeatLabel(note)}</span>`
+                    : `<span class="text-xs text-blue-400 font-semibold mt-1">⚡ Sekali Jalan</span>`;
+
+                // Format Date for display
+                const dateObj = new Date(note.targetDate);
+                const dateStr = dateObj.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: '2-digit' });
+
+                el.innerHTML = `
+                    <div class="flex items-center gap-4 overflow-hidden">
+                        <div class="flex flex-col items-center justify-center bg-black/40 rounded-lg p-2 min-w-[80px]">
+                            <span class="text-2xl font-bold font-mono text-cyan-400">${note.time}</span>
+                            <span class="text-[10px] text-gray-400 uppercase">${dateStr}</span>
+                        </div>
+                        <div class="flex flex-col min-w-0">
+                            <span class="text-lg font-medium truncate ${note.isRinging ? 'text-green-400 font-bold' : 'text-white'}">${note.text}</span>
+                            ${msgPreview}
+                            ${loopBadge}
+                        </div>
+                    </div>
+                    <div class="flex gap-2 ml-2">
+                        <button onclick="editNote(${note.id})" class="p-2 bg-blue-600/50 hover:bg-blue-600 rounded text-white transition" title="Edit">✎</button>
+                        <button onclick="requestDelete(${note.id})" class="p-2 bg-red-600/50 hover:bg-red-600 rounded text-white transition" title="Hapus">🗑</button>
+                    </div>
+                `;
+                listEl.appendChild(el);
+            });
+        }
+
         async function requestDelete(id) {
             const passInput = document.getElementById('admin-pass');
-            
             if (passInput.value !== ADMIN_PASS) {
-                showToast("Password Salah! Isi di kolom bawah untuk menghapus.", "error");
-                // Highlight password field to guide user
+                showToast("Password Salah! Isi di kolom bawah.", "error");
                 passInput.focus();
                 passInput.classList.add('border-red-500', 'animate-pulse');
                 setTimeout(() => passInput.classList.remove('animate-pulse'), 1000);
@@ -650,73 +686,35 @@
             }
         }
 
-        // --- 4. RENDER & UI ---
-        function renderNotes() {
-            const listEl = document.getElementById('notes-list');
-            const countEl = document.getElementById('total-notes');
-            
-            countEl.innerText = notes.length + " Catatan";
-            listEl.innerHTML = '';
-
-            if (notes.length === 0) {
-                listEl.innerHTML = '<div class="text-center py-10 text-gray-500 italic">Belum ada catatan di Cloud.</div>';
-                return;
-            }
-
-            notes.forEach(note => {
-                const el = document.createElement('div');
-                el.className = `glass-panel p-4 rounded-lg flex items-center justify-between transition hover:bg-white/10 group ${note.isRinging ? 'border-red-500 bg-red-500/10' : ''}`;
-                
-                const msgPreview = note.message ? `<div class="text-xs text-gray-400 mt-1 truncate max-w-[200px]">💬 ${note.message}</div>` : '';
-
-                el.innerHTML = `
-                    <div class="flex items-center gap-4 overflow-hidden">
-                        <div class="flex flex-col items-center justify-center bg-black/40 rounded-lg p-2 min-w-[80px]">
-                            <span class="text-2xl font-bold font-mono text-cyan-400">${note.time}</span>
-                            <span class="text-[10px] text-gray-400 uppercase">MULAI</span>
-                        </div>
-                        <div class="flex flex-col min-w-0">
-                            <span class="text-lg font-medium truncate ${note.isRinging ? 'text-red-400 font-bold' : 'text-white'}">${note.text}</span>
-                            ${msgPreview}
-                            <span class="text-xs text-yellow-400 font-semibold mt-1">🔄 ${getRepeatLabel(note)}</span>
-                        </div>
-                    </div>
-                    <div class="flex gap-2 ml-2">
-                        <button onclick="editNote(${note.id})" class="p-2 bg-blue-600/50 hover:bg-blue-600 rounded text-white transition" title="Edit">✎</button>
-                        <button onclick="requestDelete(${note.id})" class="p-2 bg-red-600/50 hover:bg-red-600 rounded text-white transition" title="Hapus">🗑</button>
-                    </div>
-                `;
-                listEl.appendChild(el);
-            });
-        }
-
         function editNote(id) {
             const passInput = document.getElementById('admin-pass');
             if (passInput.value !== ADMIN_PASS) {
-                showToast("Password Salah! Isi di kolom bawah untuk mengedit.", "error");
+                showToast("Password Salah! Isi di kolom bawah.", "error");
                 passInput.focus();
                 return;
             }
-
             const note = notes.find(n => n.id === id);
             if (note) {
                 document.getElementById('note-input').value = note.text;
                 document.getElementById('msg-input').value = note.message || '';
+                document.getElementById('date-input').value = note.targetDate;
                 
                 const [h, m] = note.time.split(':');
                 if(h && m) {
                     document.getElementById('hour-input').value = h;
                     document.getElementById('minute-input').value = m;
                 }
-
-                document.getElementById('repeat-type').value = note.repeatType || 'daily';
                 
-                if (note.repeatType === 'custom') {
-                    document.getElementById('interval-input').value = note.repeatInterval;
-                } else {
-                    document.getElementById('interval-input').value = '';
+                document.getElementById('loop-check').checked = note.isLoop;
+                toggleLoopOptions();
+                
+                if(note.isLoop) {
+                    document.getElementById('repeat-type').value = note.repeatType || 'interval';
+                    if (note.repeatType === 'interval') {
+                        document.getElementById('interval-input').value = note.repeatInterval;
+                    }
+                    toggleIntervalInput();
                 }
-                toggleIntervalInput();
 
                 document.getElementById('add-btn').innerHTML = "<span>SIMPAN</span>";
                 document.getElementById('add-btn').classList.add('bg-orange-500');
@@ -727,84 +725,79 @@
             }
         }
 
-        // --- 5. LOGIKA STANDARD ---
-        
-        function sendTelegramAlert(note, currentRealTime) {
-            if (telegramChatIds.length === 0) return; 
-
-            const timeDisplay = (note.repeatType === 'daily') ? note.time : currentRealTime;
-            const repeatLabel = getRepeatLabel(note);
-
-            let message = `🔔 <b>${note.text.toUpperCase()}</b> 🔔`;
-            if (note.message) message += `\n\n📝 ${note.message}`;
-            
-            message += `\n\n⏰ Waktu: ${timeDisplay} WITA`;
-            message += `\n🔄 Status: ${repeatLabel}`;
-            message += `\n✅ <b>SUDAH DIMULAI</b>`;
-            
-            // Loop send to all registered Chat IDs
-            telegramChatIds.forEach(target => {
-                const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage?chat_id=${target.chatId}&text=${encodeURIComponent(message)}&parse_mode=HTML`;
-                fetch(url).catch(e => console.error(e));
-            });
-        }
-
-        function testTelegram() {
-            const chatId = document.getElementById('telegram-chat-id').value.trim();
-            if (!chatId) return showToast("Isi ID!", "error");
-            
-            const message = "🔔 <b>TES KONEKSI</b> 🔔\n\n✅ Bot WITA Planner via Cloud Sync!";
-            const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(message)}&parse_mode=HTML`;
-            
-            showToast("Mengirim...", "info");
-            fetch(url).then(r=>r.json()).then(d=>{
-                if(d.ok) showToast("Sukses!", "success");
-                else showToast("Gagal: " + d.description, "error");
-            }).catch(()=>showToast("Error Net", "error"));
-        }
-
-        // --- ALARM CHECKER & CLOCK ---
-        function updateClock() {
-            try {
-                const now = new Date();
-                const optionsTime = { timeZone: 'Asia/Makassar', hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' };
-                const optionsDate = { timeZone: 'Asia/Makassar', weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-                const timeString = new Intl.DateTimeFormat('id-ID', optionsTime).format(now).replace(/\./g, ':');
-                const dateString = new Intl.DateTimeFormat('id-ID', optionsDate).format(now);
-
-                document.getElementById('clock-display').innerText = timeString;
-                document.getElementById('date-display').innerText = dateString;
-                checkAlarms(timeString);
-            } catch (e) {}
-        }
-
+        // --- 5. LOGIKA ALARM (FINAL REFINED) ---
         function checkAlarms(currentWitaTime) {
+            const now = new Date();
+            const optionsDate = { timeZone: 'Asia/Makassar', year: 'numeric', month: '2-digit', day: '2-digit' };
+            const parts = new Intl.DateTimeFormat('en-CA', optionsDate).formatToParts(now);
+            const y = parts.find(p => p.type === 'year').value;
+            const m = parts.find(p => p.type === 'month').value;
+            const d = parts.find(p => p.type === 'day').value;
+            const todayStr = `${y}-${m}-${d}`;
+            
             const currentHM = currentWitaTime.substring(0, 5); 
             const currentSeconds = parseInt(currentWitaTime.substring(6, 8));
-            const currentHour = parseInt(currentHM.substring(0, 2));
-            const currentMin = parseInt(currentHM.substring(3, 5));
-            const currentTotalMins = currentHour * 60 + currentMin;
             
+            const [curH, curM] = currentHM.split(':').map(Number);
+            const currentTotalMins = curH * 60 + curM;
+
             let needRender = false;
 
             notes.forEach(note => {
                 let shouldRing = false;
-                const noteHour = parseInt(note.time.substring(0, 2));
-                const noteMin = parseInt(note.time.substring(3, 5));
-                const noteTotalMins = noteHour * 60 + noteMin;
                 
-                if (note.repeatType === 'daily') {
-                    if (note.time === currentHM) shouldRing = true;
-                } else {
-                    let diff = currentTotalMins - noteTotalMins;
-                    if (diff < 0) {
-                        diff += 1440;
-                    }
+                // AUTO-DELETE FOR EXPIRED ONE-TIME NOTES
+                if (!note.isLoop) {
+                    let isExpired = false;
+                    // Check if date is in the past
+                    if (note.targetDate < todayStr) isExpired = true;
+                    // Check if date is today but time is passed
+                    else if (note.targetDate === todayStr && note.time < currentHM) isExpired = true;
                     
-                    if (note.repeatType === 'hourly') {
-                        if (diff % 60 === 0) shouldRing = true;
-                    } else if (note.repeatType === 'custom') {
-                        if (diff % note.repeatInterval === 0) shouldRing = true;
+                    if (isExpired && !note.isRinging && !note.isDeleting) {
+                        note.isDeleting = true; // Flag to prevent multiple calls
+                        console.log("Cleanup expired note:", note.text);
+                        deleteFromCloud(NOCO_CONFIG.tableJadwal, note.id).then(() => {
+                             notes = notes.filter(n => n.id !== note.id);
+                             renderNotes();
+                        }).catch(() => { note.isDeleting = false; }); // Reset flag on error
+                        return; // Skip alerting logic
+                    }
+                }
+
+                if (todayStr < note.targetDate) return;
+
+                const [targetH, targetM] = note.time.split(':').map(Number);
+                const targetTotalMins = targetH * 60 + targetM;
+                
+                const startDate = new Date(note.targetDate);
+                const currDate = new Date(todayStr);
+                const diffTime = currDate - startDate;
+                const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)); 
+                const totalElapsedMinutes = (diffDays * 1440) + (currentTotalMins - targetTotalMins);
+
+                if (!note.isLoop) {
+                    if (note.targetDate === todayStr && note.time === currentHM) {
+                        shouldRing = true;
+                    }
+                } else {
+                    if (note.repeatType === 'interval') {
+                        if (totalElapsedMinutes >= 0 && totalElapsedMinutes % note.repeatInterval === 0) {
+                             shouldRing = true;
+                        }
+                    } 
+                    else if (note.repeatType === 'daily') {
+                        if (note.time === currentHM) shouldRing = true;
+                    }
+                    else if (note.repeatType === 'weekly') {
+                        const startDay = new Date(note.targetDate).getDay(); 
+                        const currentDay = now.getDay(); 
+                        if (currentDay === startDay && note.time === currentHM) shouldRing = true;
+                    }
+                    else if (note.repeatType === 'monthly') {
+                        const targetDateNum = parseInt(note.targetDate.split('-')[2]);
+                        const currentDateNum = parseInt(d);
+                        if (currentDateNum === targetDateNum && note.time === currentHM) shouldRing = true;
                     }
                 }
 
@@ -814,8 +807,17 @@
                          if (!note.isRinging) {
                              note.isRinging = true;
                              needRender = true;
-                             showToast("ALARM: " + note.text, "error");
+                             showToast("ALARM: " + note.text, "success");
                              sendTelegramAlert(note, currentHM);
+                             
+                             if (!note.isLoop) {
+                                 console.log("Auto Deleting (Rung)...", note.id);
+                                 note.isDeleting = true;
+                                 deleteFromCloud(NOCO_CONFIG.tableJadwal, note.id).then(() => {
+                                     notes = notes.filter(n => n.id !== note.id);
+                                     renderNotes();
+                                 });
+                             }
                          }
                     } else if (currentSeconds > 6) {
                         if (note.isRinging) { note.isRinging = false; needRender = true; }
@@ -827,38 +829,26 @@
             if (needRender) renderNotes();
         }
 
-        // --- AUDIO ---
+        // --- AUDIO, TELEGRAM, UTILS ---
         let audioCtx;
         let isAudioEnabled = false;
         let masterVolume = 0.1;
-        let volumeTimeout; // For debouncing volume save
+        let volumeTimeout;
 
         function updateVolume(val) {
             masterVolume = val / 100;
             document.getElementById('volume-display').innerText = val + "%";
             if(isAudioEnabled) playTing(); 
-            
-            // Debounced Save to Cloud
             clearTimeout(volumeTimeout);
-            volumeTimeout = setTimeout(() => {
-               saveVolumeToCloud(val);
-            }, 1000);
+            volumeTimeout = setTimeout(() => { saveVolumeToCloud(val); }, 1000);
         }
         
         async function saveVolumeToCloud(val) {
             if(!volumeRecordId) return;
             try {
-                // Ensure val is number
                 const volNum = parseInt(val);
-                // FIX: Use 'vol' based on screenshot column name
-                await patchToCloud(NOCO_CONFIG.tableVolume, { 
-                    Id: volumeRecordId, 
-                    vol: volNum 
-                });
-                console.log("Volume saved:", volNum);
-            } catch(e) {
-                console.error("Volume save err", e);
-            }
+                await patchToCloud(NOCO_CONFIG.tableVolume, { Id: volumeRecordId, vol: volNum });
+            } catch(e) { }
         }
 
         function toggleAudio() {
@@ -866,24 +856,20 @@
             const icon = document.getElementById("audio-icon");
             const text = document.getElementById("audio-text");
             const volWrapper = document.getElementById("volume-wrapper");
-
             if (isAudioEnabled) {
                 isAudioEnabled = false;
                 btn.classList.replace("bg-green-500/20", "bg-white/10");
                 btn.classList.replace("border-green-500", "border-white/10");
-                icon.innerText = "🔇";
-                text.innerText = "Klik untuk aktifkan";
+                icon.innerText = "🔇"; text.innerText = "Klik untuk aktifkan";
                 volWrapper.classList.add("opacity-50", "pointer-events-none");
             } else {
                 try {
-                    if (!audioCtx)
-                        audioCtx = new(window.AudioContext || window.webkitAudioContext)();
+                    if (!audioCtx) audioCtx = new(window.AudioContext || window.webkitAudioContext)();
                     if (audioCtx.state === "suspended") audioCtx.resume();
                     isAudioEnabled = true;
                     btn.classList.replace("bg-white/10", "bg-green-500/20");
                     btn.classList.replace("border-white/10", "border-green-500");
-                    icon.innerText = "🔊";
-                    text.innerText = "Suara Aktif";
+                    icon.innerText = "🔊"; text.innerText = "Suara Aktif";
                     volWrapper.classList.remove("opacity-50", "pointer-events-none");
                     playTing(); 
                 } catch (e) {}
@@ -896,52 +882,103 @@
                 const t = audioCtx.currentTime;
                 const osc = audioCtx.createOscillator();
                 const gain = audioCtx.createGain();
-
-                osc.type = "sine";
-                osc.frequency.setValueAtTime(500, t);
-                osc.frequency.exponentialRampToValueAtTime(500, t + 0.1);
-
-                gain.gain.setValueAtTime(0, t);
-                gain.gain.linearRampToValueAtTime(masterVolume, t + 0.05); 
-                gain.gain.exponentialRampToValueAtTime(0.001, t + 2.0);
-
-                osc.connect(gain);
-                gain.connect(audioCtx.destination);
-                osc.start();
-                osc.stop(t + 2.0);
+                osc.type = "sine"; osc.frequency.setValueAtTime(500, t); osc.frequency.exponentialRampToValueAtTime(500, t + 0.1);
+                gain.gain.setValueAtTime(0, t); gain.gain.linearRampToValueAtTime(masterVolume, t + 0.05); gain.gain.exponentialRampToValueAtTime(0.001, t + 2.0);
+                osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(t + 2.0);
             } catch (e) {}
         }
+        
+        function sendTelegramAlert(note, currentRealTime) {
+            if (telegramChatIds.length === 0) return; 
+            const timeDisplay = (note.repeatType === 'interval') ? currentRealTime : note.time;
+            const repeatLabel = note.isLoop ? getRepeatLabel(note) : "Sekali Jalan";
+            let message = `🔔 <b>${note.text.toUpperCase()}</b> 🔔`;
+            if (note.message) message += `\n\n📝 ${note.message}`;
+            message += `\n\n⏰ Waktu: ${timeDisplay} WITA\n🔄 Status: ${repeatLabel}\n✅ <b>SUDAH DIMULAI</b>`;
+            telegramChatIds.forEach(target => {
+                const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage?chat_id=${target.chatId}&text=${encodeURIComponent(message)}&parse_mode=HTML`;
+                fetch(url).catch(e => console.error(e));
+            });
+        }
+        
+        function updateChatIdListUI() {
+            const listContainer = document.getElementById('chat-id-list');
+            const countBadge = document.getElementById('chat-count');
+            countBadge.innerText = telegramChatIds.length;
+            listContainer.innerHTML = '';
+            if (telegramChatIds.length === 0) {
+                listContainer.innerHTML = '<div class="text-center text-gray-500 text-xs italic py-2">Belum ada Chat ID terdaftar.</div>';
+                return;
+            }
+            telegramChatIds.forEach(item => {
+                const div = document.createElement('div');
+                div.className = "flex justify-between items-center bg-white/5 px-2 py-1 rounded";
+                div.innerHTML = `<span>${maskChatId(item.chatId)}</span><span class="text-[10px] text-green-400">Aktif</span>`;
+                listContainer.appendChild(div);
+            });
+        }
 
-        // --- UTILS UI ---
         function toggleIntervalInput() {
             const type = document.getElementById('repeat-type').value;
             const input = document.getElementById('interval-input');
-            if (type === 'custom') { input.classList.remove('hidden'); input.focus(); } 
+            if (type === 'interval') { input.classList.remove('hidden'); input.focus(); } 
             else { input.classList.add('hidden'); }
         }
-        function closeModal() { document.getElementById('modal-overlay').classList.add('hidden'); pendingDeleteId = null; }
-        function openTelegramModal() {
-            // No longer loading a single ID
-            document.getElementById('telegram-modal').classList.remove('hidden');
+        
+        function toggleLoopOptions() {
+            const isLoop = document.getElementById('loop-check').checked;
+            const optionsDiv = document.getElementById('loop-options');
+            const hint = document.getElementById('loop-hint');
+            if (isLoop) {
+                optionsDiv.classList.remove('hidden');
+                hint.classList.add('hidden');
+                document.getElementById('repeat-type').value = 'daily'; 
+                toggleIntervalInput();
+            } else {
+                optionsDiv.classList.add('hidden');
+                hint.classList.remove('hidden');
+            }
         }
+
+        function closeModal() { document.getElementById('modal-overlay').classList.add('hidden'); pendingDeleteId = null; }
+        function openTelegramModal() { document.getElementById('telegram-modal').classList.remove('hidden'); }
         function closeTelegramModal() { document.getElementById('telegram-modal').classList.add('hidden'); }
+        
         function resetForm() {
             document.getElementById('note-input').value = '';
             document.getElementById('msg-input').value = '';
             initTimeSelects();
-            document.getElementById('repeat-type').value = 'daily';
+            document.getElementById('loop-check').checked = false;
+            toggleLoopOptions();
+            document.getElementById('repeat-type').value = 'interval';
             document.getElementById('interval-input').value = '';
             document.getElementById('admin-pass').value = '';
-            toggleIntervalInput();
             document.getElementById('add-btn').innerHTML = "<span>TAMBAH</span>";
             document.getElementById('add-btn').classList.remove('bg-orange-500');
             document.getElementById('cancel-btn').classList.add('hidden');
             editModeId = null;
         }
+
         function getRepeatLabel(note) {
-            if (note.repeatType === 'hourly') return 'Setiap Jam';
-            if (note.repeatType === 'custom') return `Setiap ${note.repeatInterval} Menit`;
-            return 'Setiap Hari';
+            if (note.repeatType === 'interval') return `Tiap ${note.repeatInterval} Menit`;
+            if (note.repeatType === 'daily') return 'Setiap Hari';
+            if (note.repeatType === 'weekly') return 'Mingguan';
+            if (note.repeatType === 'monthly') return 'Bulanan';
+            return 'Berulang';
+        }
+
+        // --- UPDATE CLOCK FUNC MUST BE DEFINED ---
+        function updateClock() {
+            try {
+                const now = new Date();
+                const optionsTime = { timeZone: 'Asia/Makassar', hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' };
+                const optionsDate = { timeZone: 'Asia/Makassar', weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+                const timeString = new Intl.DateTimeFormat('id-ID', optionsTime).format(now).replace(/\./g, ':');
+                const dateString = new Intl.DateTimeFormat('id-ID', optionsDate).format(now);
+                document.getElementById('clock-display').innerText = timeString;
+                document.getElementById('date-display').innerText = dateString;
+                checkAlarms(timeString);
+            } catch (e) {}
         }
 
         // --- INIT ---
