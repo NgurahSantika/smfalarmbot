@@ -145,7 +145,7 @@
             
             <!-- Cloud Status Indicator (Mobile) -->
             <div class="absolute top-4 left-4 z-10 flex items-center gap-2 px-2.5 py-1 bg-black/60 rounded-full text-[10px] md:text-xs border border-white/20 md:hidden" id="cloud-status-mobile">
-                <div class="w-2 h-2 rounded-full bg-gray-500" id="cloud-dot-mobile"></div>
+                <div class="w-2 h-2 rounded-full bg-gray-400" id="cloud-dot-mobile"></div>
             </div>
 
             <h2 class="text-cyan-400 tracking-[0.2em] text-xs md:text-base font-bold mb-3 opacity-90 mt-6 md:mt-0 drop-shadow-md">WAKTU INDONESIA TENGAH (WITA)</h2>
@@ -182,30 +182,30 @@
             <div class="flex flex-col gap-4">
                 <!-- Baris 1: Judul -->
                 <input type="text" id="note-input" placeholder="Judul Kegiatan (Contoh: Rapat Tim)" 
-                    class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3.5 focus:outline-none focus:border-cyan-500 focus:bg-white/10 transition text-white placeholder-gray-500 font-bold text-sm md:text-base">
+                    class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3.5 focus:outline-none focus:border-cyan-400 focus:bg-white/10 transition text-white placeholder-gray-500 font-bold text-sm md:text-base shadow-inner">
                 
                 <!-- Baris 2: Pesan Tambahan (Isi) -->
                 <textarea id="msg-input" rows="2" placeholder="Isi Pesan Telegram (Opsional)" 
-                    class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3.5 focus:outline-none focus:border-cyan-500 focus:bg-white/10 transition text-white placeholder-gray-500 text-sm resize-none"></textarea>
+                    class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3.5 focus:outline-none focus:border-cyan-400 focus:bg-white/10 transition text-white placeholder-gray-500 text-sm resize-none shadow-inner"></textarea>
 
                 <!-- Baris 3: Tanggal & Waktu -->
                 <div class="flex flex-col md:flex-row gap-4">
                     <!-- TANGGAL -->
                     <div class="flex-1">
-                        <label class="text-[11px] text-gray-400 uppercase font-bold ml-1 mb-1 block tracking-wider">Mulai Tanggal</label>
+                        <label class="text-[11px] text-gray-300 uppercase font-bold ml-1 mb-1 block tracking-wider">Mulai Tanggal</label>
                         <input type="date" id="date-input" 
-                            class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3.5 focus:outline-none focus:border-cyan-500 focus:bg-white/10 transition text-white scheme-dark cursor-pointer font-medium h-[52px]">
+                            class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3.5 focus:outline-none focus:border-cyan-400 focus:bg-white/10 transition text-white scheme-dark cursor-pointer font-medium h-[52px]">
                     </div>
                     
                     <!-- JAM (Custom Selector) -->
                     <div class="flex-1">
-                        <label class="text-[11px] text-gray-400 uppercase font-bold ml-1 mb-1 block tracking-wider">Jam (WITA)</label>
-                        <div class="flex gap-2 items-center justify-center bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus-within:border-cyan-500 focus-within:bg-white/10 transition h-[52px]">
-                            <select id="hour-input" class="bg-transparent text-white text-center font-bold text-xl outline-none appearance-none cursor-pointer w-14 hover:text-cyan-400 border-none p-0 focus:ring-0">
+                        <label class="text-[11px] text-gray-300 uppercase font-bold ml-1 mb-1 block tracking-wider">Jam (WITA)</label>
+                        <div class="flex gap-2 items-center justify-center bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus-within:border-cyan-400 focus-within:bg-white/10 transition h-[52px]">
+                            <select id="hour-input" class="bg-transparent text-white text-center font-bold text-xl outline-none appearance-none cursor-pointer w-14 hover:text-cyan-300 border-none p-0 focus:ring-0">
                                 <!-- JS will populate -->
                             </select>
                             <span class="text-white font-bold text-xl mb-1">:</span>
-                            <select id="minute-input" class="bg-transparent text-white text-center font-bold text-xl outline-none appearance-none cursor-pointer w-14 hover:text-cyan-400 border-none p-0 focus:ring-0">
+                            <select id="minute-input" class="bg-transparent text-white text-center font-bold text-xl outline-none appearance-none cursor-pointer w-14 hover:text-cyan-300 border-none p-0 focus:ring-0">
                                 <!-- JS will populate -->
                             </select>
                         </div>
@@ -238,7 +238,7 @@
 
                 <!-- Baris 5: Password & Tombol -->
                 <div class="flex flex-col md:flex-row gap-4 mt-2 pt-4 border-t border-white/10">
-                    <input type="password" id="admin-pass" placeholder="Password (Wajib: wah12345)" 
+                    <input type="password" id="admin-pass" placeholder="Password (Wajib)" 
                         class="flex-1 bg-white/5 border border-red-500/20 rounded-xl px-4 py-3.5 focus:outline-none focus:border-red-500 focus:bg-white/10 transition text-white placeholder-red-400/30 text-sm md:text-base">
 
                     <div class="flex gap-3 w-full md:w-auto">
@@ -311,7 +311,7 @@
                     </div>
                     
                     <div>
-                        <input type="password" id="tele-pass" placeholder="Password (Wajib: wah12345)" 
+                        <input type="password" id="tele-pass" placeholder="Password (Wajib)" 
                             class="w-full bg-black/40 border border-red-500/30 rounded-lg px-3 py-2.5 text-white focus:border-red-500 focus:outline-none text-sm placeholder-red-400/30">
                     </div>
 
@@ -347,7 +347,6 @@
         let editModeId = null; 
         let volumeRecordId = null; 
         
-        // Variable untuk melacak pergantian hari
         let lastDateWita = ""; 
 
         // --- INIT Options ---
@@ -387,7 +386,7 @@
                 minuteSelect.value = m.trim();
             }
 
-            // Note: Date input initialization is now handled in updateClock to ensure it's always current
+            // Date input initialization is now handled in updateClock
         }
 
         // --- UTILITIES ---
@@ -565,18 +564,27 @@
         function updateChatIdListUI() {
             const listContainer = document.getElementById('chat-id-list');
             const countBadge = document.getElementById('chat-count');
-            countBadge.innerText = telegramChatIds.length;
-            listContainer.innerHTML = '';
-            if (telegramChatIds.length === 0) {
-                listContainer.innerHTML = '<div class="text-center text-gray-500 text-xs italic py-4">Belum ada Chat ID terdaftar.</div>';
-                return;
+            
+            // Safety check
+            if (countBadge) {
+                countBadge.innerText = telegramChatIds.length;
             }
-            telegramChatIds.forEach(item => {
-                const div = document.createElement('div');
-                div.className = "flex justify-between items-center bg-white/5 px-3 py-2 rounded-lg border border-white/5";
-                div.innerHTML = `<span class="font-mono text-cyan-300 tracking-wider">${maskChatId(item.chatId)}</span><span class="text-[10px] text-green-400 bg-green-900/30 px-2 py-0.5 rounded border border-green-500/30">Aktif</span>`;
-                listContainer.appendChild(div);
-            });
+            
+            if (listContainer) {
+                listContainer.innerHTML = '';
+
+                if (telegramChatIds.length === 0) {
+                    listContainer.innerHTML = '<div class="text-center text-gray-500 text-xs italic py-4">Belum ada Chat ID terdaftar.</div>';
+                    return;
+                }
+
+                telegramChatIds.forEach(item => {
+                    const div = document.createElement('div');
+                    div.className = "flex justify-between items-center bg-white/5 px-3 py-2 rounded-lg border border-white/5";
+                    div.innerHTML = `<span class="font-mono text-cyan-300 tracking-wider">${maskChatId(item.chatId)}</span><span class="text-[10px] text-green-400 bg-green-900/30 px-2 py-0.5 rounded border border-green-500/30">Aktif</span>`;
+                    listContainer.appendChild(div);
+                });
+            }
         }
 
         async function saveTelegramSettings() {
@@ -803,7 +811,7 @@
             }
         }
 
-        // --- 5. LOGIKA ALARM ---
+        // --- 5. LOGIKA ALARM (FINAL REFINED) ---
         function checkAlarms(currentWitaTime) {
             const now = new Date();
             const optionsDate = { timeZone: 'Asia/Makassar', year: 'numeric', month: '2-digit', day: '2-digit' };
@@ -824,13 +832,13 @@
             notes.forEach(note => {
                 let shouldRing = false;
                 
-                // AUTO-DELETE (One-Time)
+                // AUTO-DELETE Logic for One-Time Events
                 if (!note.isLoop) {
                     let isExpired = false;
                     if (note.targetDate < todayStr) isExpired = true;
                     else if (note.targetDate === todayStr) {
                          const [targetH, targetM] = note.time.split(':').map(Number);
-                         // Expire if passed 1 minute
+                         // Expire if current time is > target time + 1 minute (tolerance)
                          if (currentTotalMins > (targetH * 60 + targetM + 1)) {
                              isExpired = true;
                          }
@@ -1005,6 +1013,7 @@
             document.getElementById('cancel-btn').classList.add('hidden');
             editModeId = null;
         }
+
         function getRepeatLabel(note) {
             if (note.repeatType === 'interval') return `Tiap ${note.repeatInterval} Menit`;
             if (note.repeatType === 'daily') return 'Setiap Hari';
@@ -1053,10 +1062,12 @@
         }
 
         // --- INIT ---
-        initTimeSelects();
-        initData();
-        setInterval(updateClock, 1000);
-        updateClock();
+        window.addEventListener('DOMContentLoaded', () => {
+            initTimeSelects();
+            initData();
+            setInterval(updateClock, 1000);
+            updateClock();
+        });
 
     </script>
 </body>
