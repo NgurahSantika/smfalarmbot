@@ -346,6 +346,9 @@
         let telegramChatIds = []; 
         let editModeId = null; 
         let volumeRecordId = null; 
+        
+        // Variable untuk melacak pergantian hari
+        let lastDateWita = ""; 
 
         // --- INIT Options ---
         function initTimeSelects() {
@@ -384,8 +387,7 @@
                 minuteSelect.value = m.trim();
             }
 
-            const today = new Date().toISOString().split('T')[0];
-            document.getElementById('date-input').value = today;
+            // Note: Date input initialization is now handled in updateClock to ensure it's always current
         }
 
         // --- UTILITIES ---
@@ -1015,12 +1017,37 @@
         function updateClock() {
             try {
                 const now = new Date();
+                
+                // 1. Tampilan Jam & Tanggal Header
                 const optionsTime = { timeZone: 'Asia/Makassar', hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' };
                 const optionsDate = { timeZone: 'Asia/Makassar', weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
                 const timeString = new Intl.DateTimeFormat('id-ID', optionsTime).format(now).replace(/\./g, ':');
                 const dateString = new Intl.DateTimeFormat('id-ID', optionsDate).format(now);
+                
                 document.getElementById('clock-display').innerText = timeString;
                 document.getElementById('date-display').innerText = dateString;
+
+                // 2. Auto-Update Input Tanggal saat Ganti Hari (Midnight Update)
+                const fmtISO = new Intl.DateTimeFormat('en-CA', { 
+                    timeZone: 'Asia/Makassar', year: 'numeric', month: '2-digit', day: '2-digit' 
+                });
+                const parts = fmtISO.formatToParts(now);
+                const y = parts.find(p => p.type === 'year').value;
+                const m = parts.find(p => p.type === 'month').value;
+                const d = parts.find(p => p.type === 'day').value;
+                const currentWitaISO = `${y}-${m}-${d}`;
+
+                // Jika tanggal berubah (atau pertama kali load), update input tanggal
+                // Pengecekan !editModeId agar tidak mengubah tanggal saat user sedang mengedit jadwal lama
+                if (currentWitaISO !== lastDateWita) {
+                    lastDateWita = currentWitaISO;
+                    const dateInput = document.getElementById('date-input');
+                    if(dateInput && !editModeId) {
+                        dateInput.value = currentWitaISO;
+                        console.log("Date input auto-updated to:", currentWitaISO);
+                    }
+                }
+
                 checkAlarms(timeString);
             } catch (e) {}
         }
